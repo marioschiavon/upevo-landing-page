@@ -28,9 +28,18 @@ const Index = () => {
               <a href="#contato" className="text-foreground hover:text-primary transition-colors">Contato</a>
             </div>
 
-            <Button className="bg-gradient-primary hover:shadow-glow transition-all duration-300">
-              Solicitar Orçamento
-            </Button>
+            <div className="flex items-center gap-3">
+              <Button 
+                variant="outline" 
+                className="border-primary text-primary hover:bg-primary hover:text-white"
+                onClick={() => window.location.href = '/login'}
+              >
+                Login
+              </Button>
+              <Button className="bg-gradient-primary hover:shadow-glow transition-all duration-300">
+                Solicitar Orçamento
+              </Button>
+            </div>
           </nav>
         </div>
       </header>
