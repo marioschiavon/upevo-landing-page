@@ -13,11 +13,12 @@ const Index = () => {
       <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b">
         <div className="container mx-auto px-6 py-4">
           <nav className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gradient-primary rounded-lg flex items-center justify-center">
-                <span className="font-bold text-white text-sm">U</span>
-              </div>
-              <span className="text-xl font-bold text-foreground">Upevolution</span>
+            <div className="flex items-center space-x-3">
+              <img 
+                src="/lovable-uploads/e20659b7-17a3-4fba-a781-da7aeb501e68.png" 
+                alt="Upevolution Logo" 
+                className="h-8"
+              />
             </div>
             
             <div className="hidden md:flex items-center space-x-8">
@@ -365,11 +366,12 @@ const Index = () => {
         <div className="container mx-auto px-6">
           <div className="grid md:grid-cols-4 gap-8">
             <div className="space-y-4">
-              <div className="flex items-center space-x-2">
-                <div className="w-8 h-8 bg-gradient-primary rounded-lg flex items-center justify-center">
-                  <span className="font-bold text-white text-sm">U</span>
-                </div>
-                <span className="text-xl font-bold">Upevolution</span>
+              <div className="flex items-center space-x-3">
+                <img 
+                  src="/lovable-uploads/e20659b7-17a3-4fba-a781-da7aeb501e68.png" 
+                  alt="Upevolution Logo" 
+                  className="h-8"
+                />
               </div>
               <p className="text-muted-foreground">
                 Transformando ideias em aplicativos reais desde 2021.

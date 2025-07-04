@@ -90,8 +90,12 @@ const SignUp = () => {
 
         <Card className="shadow-elegant border-0">
           <CardHeader className="text-center">
-            <div className="w-12 h-12 bg-gradient-primary rounded-xl flex items-center justify-center mx-auto mb-4">
-              <span className="font-bold text-white text-xl">U</span>
+            <div className="flex justify-center mb-4">
+              <img 
+                src="/lovable-uploads/7700580a-cd6a-459a-ae9d-64022d619f96.png" 
+                alt="Upevolution Logo" 
+                className="w-16 h-16"
+              />
             </div>
             <CardTitle className="text-2xl font-bold text-foreground">Criar Nova Conta</CardTitle>
             <CardDescription>
