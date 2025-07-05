@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { OrganizationDropdown } from "@/components/OrganizationDropdown";
 import { 
   LayoutDashboard, 
   FolderOpen, 
@@ -81,7 +82,7 @@ const Dashboard = () => {
     { icon: LayoutDashboard, label: "Dashboard", active: true, path: "/dashboard" },
     { icon: FolderOpen, label: "Projetos", path: "/projects" },
     { icon: Users, label: "Clientes", path: "/clients" },
-    { icon: Building2, label: "Organização" },
+    { icon: Building2, label: "Organização", path: "/organizations" },
     { icon: BarChart3, label: "Relatórios" },
     { icon: Wallet, label: "Financeiro" },
     { icon: Bell, label: "Avisos" },
@@ -131,17 +132,18 @@ const Dashboard = () => {
 
       {/* Main Content */}
       <main className="flex-1 overflow-auto">
-        <div className="p-8">
-          {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-foreground mb-2">
-              Dashboard
-            </h1>
-            <p className="text-muted-foreground">
-              Visão geral dos seus projetos e atividades
-            </p>
+        {/* Header com dropdown de organização */}
+        <header className="bg-card border-b shadow-sm p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
+              <p className="text-muted-foreground">Visão geral dos seus projetos e atividades</p>
+            </div>
+            <OrganizationDropdown />
           </div>
+        </header>
 
+        <div className="p-8">
           {/* Summary Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
             {summaryData.map((item, index) => (

@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { OrganizationDropdown } from "@/components/OrganizationDropdown";
 import {
   LayoutDashboard, 
   FolderOpen, 
@@ -103,7 +104,7 @@ const Projects = () => {
     { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
     { icon: FolderOpen, label: "Projetos", active: true },
     { icon: Users, label: "Clientes", path: "/clients" },
-    { icon: Building2, label: "Organização" },
+    { icon: Building2, label: "Organização", path: "/organizations" },
     { icon: BarChart3, label: "Relatórios" },
     { icon: Wallet, label: "Financeiro" },
     { icon: Bell, label: "Avisos" },
@@ -164,16 +165,19 @@ const Projects = () => {
 
       {/* Main Content */}
       <main className="flex-1 overflow-auto">
+        {/* Header com dropdown de organização */}
+        <header className="bg-card border-b shadow-sm p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-foreground">Projetos</h1>
+              <p className="text-muted-foreground">Aqui você visualiza todos os projetos ativos. Projetos são gerados a partir de orçamentos aprovados.</p>
+            </div>
+            <OrganizationDropdown />
+          </div>
+        </header>
+
         <div className="p-8">
-          {/* Header */}
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-foreground mb-2">
-              Projetos
-            </h1>
-            <p className="text-muted-foreground mb-6">
-              Aqui você visualiza todos os projetos ativos. Projetos são gerados a partir de orçamentos aprovados.
-            </p>
-            
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>

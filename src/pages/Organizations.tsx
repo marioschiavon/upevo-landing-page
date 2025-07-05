@@ -4,7 +4,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { OrganizationDropdown } from "@/components/OrganizationDropdown";
 import {
   LayoutDashboard, 
   FolderOpen, 
@@ -24,6 +23,7 @@ import {
   AlertCircle
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useOrganization } from "@/contexts/OrganizationContext";
 import {
   Table,
   TableBody,
@@ -33,76 +33,28 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-const Clients = () => {
+const Organizations = () => {
   const navigate = useNavigate();
+  const { organizations } = useOrganization();
   const [searchTerm, setSearchTerm] = useState("");
-  const [clientType, setClientType] = useState("all");
+  const [orgType, setOrgType] = useState("all");
 
   const handleLogout = () => {
     navigate("/");
   };
 
-  // Dados mock para clientes
-  const clientsData = [
-    {
-      id: "CLI-001",
-      name: "TechCorp Ltda",
-      document: "12.345.678/0001-90",
-      phone: "(11) 3456-7890",
-      email: "contato@techcorp.com.br",
-      projectCount: 3,
-      type: "juridica"
-    },
-    {
-      id: "CLI-002", 
-      name: "João Silva Santos",
-      document: "123.456.789-00",
-      phone: "(11) 98765-4321",
-      email: "joao.silva@email.com",
-      projectCount: 1,
-      type: "fisica"
-    },
-    {
-      id: "CLI-003",
-      name: "IndustrialMax S/A",
-      document: "98.765.432/0001-10",
-      phone: "(11) 2345-6789", 
-      email: "comercial@industrialmax.com.br",
-      projectCount: 2,
-      type: "juridica"
-    },
-    {
-      id: "CLI-004",
-      name: "Maria Oliveira Costa",
-      document: "987.654.321-00",
-      phone: "(11) 91234-5678",
-      email: "maria.costa@email.com",
-      projectCount: 1,
-      type: "fisica"
-    },
-    {
-      id: "CLI-005",
-      name: "GlobalTech Solutions",
-      document: "11.222.333/0001-44",
-      phone: "(11) 3333-4444",
-      email: "info@globaltech.com",
-      projectCount: 4,
-      type: "juridica"
-    }
-  ];
-
-  const filteredClients = clientsData.filter(client => {
-    const matchesSearch = client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         client.document.includes(searchTerm);
-    const matchesType = clientType === "all" || client.type === clientType;
+  const filteredOrganizations = organizations.filter(org => {
+    const matchesSearch = org.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         org.tipo_organizacao.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesType = orgType === "all" || org.tipo_organizacao === orgType;
     return matchesSearch && matchesType;
   });
 
   const sidebarItems = [
     { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
     { icon: FolderOpen, label: "Projetos", path: "/projects" },
-    { icon: Users, label: "Clientes", active: true },
-    { icon: Building2, label: "Organização", path: "/organizations" },
+    { icon: Users, label: "Clientes", path: "/clients" },
+    { icon: Building2, label: "Organização", active: true },
     { icon: BarChart3, label: "Relatórios" },
     { icon: Wallet, label: "Financeiro" },
     { icon: Bell, label: "Avisos" },
@@ -152,22 +104,19 @@ const Clients = () => {
 
       {/* Main Content */}
       <main className="flex-1 overflow-auto">
-        {/* Header com dropdown de organização */}
-        <header className="bg-card border-b shadow-sm p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-foreground">Clientes</h1>
-              <p className="text-muted-foreground">Gerencie todos os seus clientes e visualize informações detalhadas.</p>
-            </div>
-            <OrganizationDropdown />
-          </div>
-        </header>
-
         <div className="p-8">
+          {/* Header */}
           <div className="mb-8">
+            <h1 className="text-3xl font-bold text-foreground mb-2">
+              Organizações
+            </h1>
+            <p className="text-muted-foreground mb-6">
+              Gerencie suas organizações e alterne entre diferentes contextos de trabalho.
+            </p>
+            
             <Button className="mb-6">
               <Plus className="h-4 w-4 mr-2" />
-              Novo Cliente
+              Nova Organização
             </Button>
           </div>
 
@@ -176,68 +125,66 @@ const Clients = () => {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
               <Input
-                placeholder="Buscar por nome ou CNPJ/CPF..."
+                placeholder="Buscar por nome ou área de atuação..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
               />
             </div>
-            <Select value={clientType} onValueChange={setClientType}>
+            <Select value={orgType} onValueChange={setOrgType}>
               <SelectTrigger className="w-full sm:w-48">
-                <SelectValue placeholder="Tipo de cliente" />
+                <SelectValue placeholder="Tipo de organização" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todos</SelectItem>
-                <SelectItem value="fisica">Pessoa Física</SelectItem>
-                <SelectItem value="juridica">Pessoa Jurídica</SelectItem>
+                <SelectItem value="Desenvolvimento">Desenvolvimento</SelectItem>
+                <SelectItem value="Marketing">Marketing</SelectItem>
+                <SelectItem value="Consultoria">Consultoria</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
-          {/* Clients Table */}
-          {filteredClients.length > 0 ? (
+          {/* Organizations Table */}
+          {filteredOrganizations.length > 0 ? (
             <Card className="shadow-card">
               <CardContent className="p-0">
                 <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead>ID</TableHead>
-                      <TableHead>Nome do Cliente</TableHead>
-                      <TableHead>CNPJ/CPF</TableHead>
-                      <TableHead>Telefone</TableHead>
-                      <TableHead>E-mail</TableHead>
+                      <TableHead>Nome da Organização</TableHead>
+                      <TableHead>Área de Atuação</TableHead>
                       <TableHead>Projetos</TableHead>
+                      <TableHead>Descrição</TableHead>
                       <TableHead className="w-32">Ações</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredClients.map((client) => (
-                      <TableRow key={client.id}>
-                        <TableCell className="font-mono text-sm">{client.id}</TableCell>
+                    {filteredOrganizations.map((org) => (
+                      <TableRow key={org.id}>
+                        <TableCell className="font-mono text-sm">ORG-{org.id.toString().padStart(3, '0')}</TableCell>
                         <TableCell>
                           <div className="flex items-center gap-3">
                             <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
-                              <Users className="h-4 w-4 text-primary" />
+                              <Building2 className="h-4 w-4 text-primary" />
                             </div>
-                            <div>
-                              <span className="font-medium">{client.name}</span>
-                              <div className="text-xs text-muted-foreground">
-                                {client.type === 'fisica' ? 'Pessoa Física' : 'Pessoa Jurídica'}
-                              </div>
-                            </div>
+                            <span className="font-medium">{org.nome}</span>
                           </div>
                         </TableCell>
-                        <TableCell className="font-mono text-sm">{client.document}</TableCell>
-                        <TableCell>{client.phone}</TableCell>
-                        <TableCell>{client.email}</TableCell>
                         <TableCell>
-                          <Badge variant="outline">{client.projectCount}</Badge>
+                          <Badge variant="secondary">{org.tipo_organizacao}</Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline">{org.projectCount}</Badge>
+                        </TableCell>
+                        <TableCell className="max-w-xs truncate text-muted-foreground">
+                          {org.descricao || "Sem descrição"}
                         </TableCell>
                         <TableCell>
                           <Button 
                             variant="outline" 
                             size="sm"
-                            onClick={() => navigate(`/clients/${client.id}`)}
+                            onClick={() => navigate(`/organizations/${org.id}`)}
                           >
                             <Eye className="h-4 w-4 mr-2" />
                             Ver Detalhes
@@ -256,9 +203,9 @@ const Clients = () => {
                 <div className="w-16 h-16 mx-auto mb-4 bg-muted rounded-full flex items-center justify-center">
                   <AlertCircle className="h-8 w-8 text-muted-foreground" />
                 </div>
-                <h3 className="text-lg font-semibold mb-2">Nenhum cliente encontrado</h3>
+                <h3 className="text-lg font-semibold mb-2">Nenhuma organização encontrada</h3>
                 <p className="text-muted-foreground">
-                  Ajuste os filtros ou adicione um novo cliente.
+                  Ajuste os filtros ou crie uma nova organização.
                 </p>
               </CardContent>
             </Card>
@@ -269,4 +216,4 @@ const Clients = () => {
   );
 };
 
-export default Clients;
+export default Organizations;
