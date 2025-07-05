@@ -80,7 +80,7 @@ const Dashboard = () => {
   const sidebarItems = [
     { icon: LayoutDashboard, label: "Dashboard", active: true, path: "/dashboard" },
     { icon: FolderOpen, label: "Projetos", path: "/projects" },
-    { icon: Users, label: "Clientes" },
+    { icon: Users, label: "Clientes", path: "/clients" },
     { icon: Building2, label: "Organização" },
     { icon: BarChart3, label: "Relatórios" },
     { icon: Wallet, label: "Financeiro" },

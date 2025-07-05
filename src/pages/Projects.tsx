@@ -102,7 +102,7 @@ const Projects = () => {
   const sidebarItems = [
     { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
     { icon: FolderOpen, label: "Projetos", active: true },
-    { icon: Users, label: "Clientes" },
+    { icon: Users, label: "Clientes", path: "/clients" },
     { icon: Building2, label: "Organização" },
     { icon: BarChart3, label: "Relatórios" },
     { icon: Wallet, label: "Financeiro" },
