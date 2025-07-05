@@ -78,8 +78,8 @@ const Dashboard = () => {
   ];
 
   const sidebarItems = [
-    { icon: LayoutDashboard, label: "Dashboard", active: true },
-    { icon: FolderOpen, label: "Projetos" },
+    { icon: LayoutDashboard, label: "Dashboard", active: true, path: "/dashboard" },
+    { icon: FolderOpen, label: "Projetos", path: "/projects" },
     { icon: Users, label: "Clientes" },
     { icon: Building2, label: "Organização" },
     { icon: BarChart3, label: "Relatórios" },
@@ -107,6 +107,7 @@ const Dashboard = () => {
           {sidebarItems.map((item) => (
             <button
               key={item.label}
+              onClick={() => item.path && navigate(item.path)}
               className={`w-full flex items-center gap-3 px-4 py-3 text-left rounded-lg transition-colors ${
                 item.active 
                   ? 'bg-primary text-primary-foreground' 
