@@ -34,10 +34,10 @@ export const Sidebar = ({ activeItem }: SidebarProps) => {
   };
 
   const sidebarItems: SidebarItem[] = [
-    { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
-    { icon: FolderOpen, label: "Projetos", path: "/projects" },
+    { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard", active: activeItem === "dashboard" },
+    { icon: FolderOpen, label: "Projetos", path: "/projects", active: activeItem === "projects" },
     { icon: Users, label: "Clientes", path: "/clients", active: activeItem === "clients" },
-    { icon: Building2, label: "Organização", path: "/organizations" },
+    { icon: Building2, label: "Organização", path: "/organizations", active: activeItem === "organizations" },
     { icon: BarChart3, label: "Relatórios" },
     { icon: Wallet, label: "Financeiro" },
     { icon: Bell, label: "Avisos" },

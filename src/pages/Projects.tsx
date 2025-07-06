@@ -269,7 +269,9 @@ const Projects = () => {
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuItem>Ver Detalhes</DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => navigate(`/projects/${project.id}`)}>
+                                Ver Detalhes
+                              </DropdownMenuItem>
                               <DropdownMenuItem>Editar Projeto</DropdownMenuItem>
                               <DropdownMenuItem>Relatório</DropdownMenuItem>
                             </DropdownMenuContent>
