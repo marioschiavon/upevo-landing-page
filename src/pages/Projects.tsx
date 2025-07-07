@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -41,11 +41,51 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { NewProjectModal } from "@/components/forms/NewProjectModal";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 const Projects = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("recent");
+  const [isNewProjectModalOpen, setIsNewProjectModalOpen] = useState(false);
+  const [clients, setClients] = useState<Array<{ id: string; name: string }>>([]);
+  const [organizations, setOrganizations] = useState<Array<{ id: string; name: string }>>([]);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    try {
+      const [clientsResponse, organizationsResponse] = await Promise.all([
+        supabase.from('clients').select('id, name').order('name'),
+        supabase.from('organizations').select('id, name').order('name')
+      ]);
+
+      if (clientsResponse.error) throw clientsResponse.error;
+      if (organizationsResponse.error) throw organizationsResponse.error;
+
+      setClients(clientsResponse.data || []);
+      setOrganizations(organizationsResponse.data || []);
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Não foi possível carregar os dados",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleProjectCreated = () => {
+    // Recarregar lista de projetos ou atualizar estado
+    toast({
+      title: "Projeto cadastrado",
+      description: "O projeto foi cadastrado com sucesso!",
+    });
+  };
 
   const handleLogout = () => {
     navigate("/");
@@ -178,19 +218,19 @@ const Projects = () => {
 
         <div className="p-8">
           <div className="mb-8">
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button disabled className="mb-6">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Novo Projeto
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Somente após aprovação de orçamento</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+            <Button 
+              className="mb-6" 
+              onClick={() => setIsNewProjectModalOpen(true)}
+              disabled={clients.length === 0 || organizations.length === 0}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Novo Projeto
+            </Button>
+            {(clients.length === 0 || organizations.length === 0) && (
+              <p className="text-sm text-muted-foreground">
+                É necessário ter ao menos um cliente e uma organização para criar projetos
+              </p>
+            )}
           </div>
 
           {/* Search and Filters */}
@@ -299,6 +339,14 @@ const Projects = () => {
           )}
         </div>
       </main>
+
+      <NewProjectModal
+        isOpen={isNewProjectModalOpen}
+        onClose={() => setIsNewProjectModalOpen(false)}
+        onSuccess={handleProjectCreated}
+        clients={clients}
+        organizations={organizations}
+      />
     </div>
   );
 };

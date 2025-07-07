@@ -435,30 +435,36 @@ export type Database = {
         Row: {
           client_id: string
           created_at: string
+          currency: string | null
           description: string | null
           id: string
           name: string
           organization_id: string
+          start_date: string | null
           status: string
           updated_at: string
         }
         Insert: {
           client_id: string
           created_at?: string
+          currency?: string | null
           description?: string | null
           id?: string
           name: string
           organization_id: string
+          start_date?: string | null
           status?: string
           updated_at?: string
         }
         Update: {
           client_id?: string
           created_at?: string
+          currency?: string | null
           description?: string | null
           id?: string
           name?: string
           organization_id?: string
+          start_date?: string | null
           status?: string
           updated_at?: string
         }

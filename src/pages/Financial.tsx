@@ -3,11 +3,15 @@ import { Sidebar } from "@/components/shared/Sidebar";
 import { OrganizationDropdown } from "@/components/OrganizationDropdown";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
 import { BudgetsTable } from "@/components/financial/BudgetsTable";
 import { PaymentsTable } from "@/components/financial/PaymentsTable";
 import { FinancialFilters } from "@/components/financial/FinancialFilters";
 import { FinancialSummary } from "@/components/financial/FinancialSummary";
 import { FinancialCharts } from "@/components/financial/FinancialCharts";
+import { NewClientModal } from "@/components/forms/NewClientModal";
+import { NewProjectModal } from "@/components/forms/NewProjectModal";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
@@ -27,7 +31,10 @@ const Financial = () => {
   const [payments, setPayments] = useState<any[]>([]);
   const [clients, setClients] = useState<any[]>([]);
   const [projects, setProjects] = useState<any[]>([]);
+  const [organizations, setOrganizations] = useState<any[]>([]);
   const [filters, setFilters] = useState<FinancialFilters>({});
+  const [isNewClientModalOpen, setIsNewClientModalOpen] = useState(false);
+  const [isNewProjectModalOpen, setIsNewProjectModalOpen] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -96,19 +103,22 @@ const Financial = () => {
       
       if (paymentsError) throw paymentsError;
 
-      // Fetch clients and projects for filters
-      const [clientsResult, projectsResult] = await Promise.all([
+      // Fetch clients, projects and organizations for filters
+      const [clientsResult, projectsResult, organizationsResult] = await Promise.all([
         supabase.from('clients').select('id, name').order('name'),
-        supabase.from('projects').select('id, name, client_id').order('name')
+        supabase.from('projects').select('id, name, client_id').order('name'),
+        supabase.from('organizations').select('id, name').order('name')
       ]);
 
       if (clientsResult.error) throw clientsResult.error;
       if (projectsResult.error) throw projectsResult.error;
+      if (organizationsResult.error) throw organizationsResult.error;
 
       setBudgets(budgetsData || []);
       setPayments(paymentsData || []);
       setClients(clientsResult.data || []);
       setProjects(projectsResult.data || []);
+      setOrganizations(organizationsResult.data || []);
     } catch (error) {
       toast({
         title: "Erro",
@@ -119,6 +129,22 @@ const Financial = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleClientCreated = () => {
+    fetchData();
+    toast({
+      title: "Cliente cadastrado",
+      description: "O cliente foi cadastrado com sucesso!",
+    });
+  };
+
+  const handleProjectCreated = () => {
+    fetchData();
+    toast({
+      title: "Projeto cadastrado",
+      description: "O projeto foi cadastrado com sucesso!",
+    });
   };
 
   if (loading) {
@@ -148,6 +174,21 @@ const Financial = () => {
         </header>
 
         <div className="p-6 space-y-6">
+          {/* Actions */}
+          <div className="flex gap-4 mb-6">
+            <Button onClick={() => setIsNewClientModalOpen(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Novo Cliente
+            </Button>
+            <Button 
+              onClick={() => setIsNewProjectModalOpen(true)}
+              disabled={clients.length === 0 || organizations.length === 0}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Novo Projeto
+            </Button>
+          </div>
+
           <FinancialFilters 
             filters={filters}
             onFiltersChange={setFilters}
@@ -175,6 +216,21 @@ const Financial = () => {
           </Tabs>
         </div>
       </main>
+
+      <NewClientModal
+        isOpen={isNewClientModalOpen}
+        onClose={() => setIsNewClientModalOpen(false)}
+        onSuccess={handleClientCreated}
+        organizations={organizations}
+      />
+
+      <NewProjectModal
+        isOpen={isNewProjectModalOpen}
+        onClose={() => setIsNewProjectModalOpen(false)}
+        onSuccess={handleProjectCreated}
+        clients={clients}
+        organizations={organizations}
+      />
     </div>
   );
 };
