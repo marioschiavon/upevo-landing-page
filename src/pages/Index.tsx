@@ -33,7 +33,7 @@ const Index = () => {
               <Button 
                 variant="outline" 
                 className="border-primary text-primary hover:bg-primary hover:text-white"
-                onClick={() => window.location.href = '/login'}
+                onClick={() => window.location.href = '/auth'}
               >
                 Login
               </Button>
