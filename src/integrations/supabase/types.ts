@@ -338,25 +338,31 @@ export type Database = {
       }
       organizations: {
         Row: {
+          category: string | null
           created_at: string
           description: string | null
           id: string
+          logo_url: string | null
           name: string
           owner_id: string
           updated_at: string
         }
         Insert: {
+          category?: string | null
           created_at?: string
           description?: string | null
           id?: string
+          logo_url?: string | null
           name: string
           owner_id: string
           updated_at?: string
         }
         Update: {
+          category?: string | null
           created_at?: string
           description?: string | null
           id?: string
+          logo_url?: string | null
           name?: string
           owner_id?: string
           updated_at?: string

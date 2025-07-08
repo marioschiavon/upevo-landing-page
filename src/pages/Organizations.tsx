@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -24,6 +24,9 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useOrganization } from "@/contexts/OrganizationContext";
+import { NewOrganizationModal } from "@/components/forms/NewOrganizationModal";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 import {
   Table,
   TableBody,
@@ -35,18 +38,57 @@ import {
 
 const Organizations = () => {
   const navigate = useNavigate();
-  const { organizations } = useOrganization();
+  const { organizations, setOrganizations } = useOrganization();
   const [searchTerm, setSearchTerm] = useState("");
   const [orgType, setOrgType] = useState("all");
+  const [isNewOrgModalOpen, setIsNewOrgModalOpen] = useState(false);
+  const [realOrganizations, setRealOrganizations] = useState<any[]>([]);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    fetchOrganizations();
+  }, []);
+
+  const fetchOrganizations = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('organizations')
+        .select(`
+          id,
+          name,
+          description,
+          category,
+          logo_url,
+          created_at,
+          owner_id
+        `)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setRealOrganizations(data || []);
+    } catch (error: any) {
+      console.error("Erro ao carregar organizações:", error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível carregar as organizações",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleOrganizationCreated = async (organizationId: string) => {
+    await fetchOrganizations();
+    navigate(`/organizations/${organizationId}`);
+  };
 
   const handleLogout = () => {
     navigate("/");
   };
 
-  const filteredOrganizations = organizations.filter(org => {
-    const matchesSearch = org.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         org.tipo_organizacao.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesType = orgType === "all" || org.tipo_organizacao === orgType;
+  const filteredOrganizations = realOrganizations.filter(org => {
+    const matchesSearch = org.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         (org.category && org.category.toLowerCase().includes(searchTerm.toLowerCase()));
+    const matchesType = orgType === "all" || org.category === orgType;
     return matchesSearch && matchesType;
   });
 
@@ -114,7 +156,7 @@ const Organizations = () => {
               Gerencie suas organizações e alterne entre diferentes contextos de trabalho.
             </p>
             
-            <Button className="mb-6">
+            <Button className="mb-6" onClick={() => setIsNewOrgModalOpen(true)}>
               <Plus className="h-4 w-4 mr-2" />
               Nova Organização
             </Button>
@@ -163,23 +205,31 @@ const Organizations = () => {
                     {filteredOrganizations.map((org) => (
                       <TableRow key={org.id}>
                         <TableCell className="font-mono text-sm">ORG-{org.id.toString().padStart(3, '0')}</TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
-                              <Building2 className="h-4 w-4 text-primary" />
-                            </div>
-                            <span className="font-medium">{org.nome}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="secondary">{org.tipo_organizacao}</Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="outline">{org.projectCount}</Badge>
-                        </TableCell>
-                        <TableCell className="max-w-xs truncate text-muted-foreground">
-                          {org.descricao || "Sem descrição"}
-                        </TableCell>
+                         <TableCell>
+                           <div className="flex items-center gap-3">
+                             {org.logo_url ? (
+                               <img 
+                                 src={org.logo_url} 
+                                 alt={`Logo ${org.name}`}
+                                 className="w-8 h-8 rounded-lg object-cover"
+                               />
+                             ) : (
+                               <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
+                                 <Building2 className="h-4 w-4 text-primary" />
+                               </div>
+                             )}
+                             <span className="font-medium">{org.name}</span>
+                           </div>
+                         </TableCell>
+                         <TableCell>
+                           <Badge variant="secondary">{org.category || "Sem categoria"}</Badge>
+                         </TableCell>
+                         <TableCell>
+                           <Badge variant="outline">0</Badge>
+                         </TableCell>
+                         <TableCell className="max-w-xs truncate text-muted-foreground">
+                           {org.description || "Sem descrição"}
+                         </TableCell>
                         <TableCell>
                           <Button 
                             variant="outline" 
@@ -212,6 +262,12 @@ const Organizations = () => {
           )}
         </div>
       </main>
+
+      <NewOrganizationModal
+        isOpen={isNewOrgModalOpen}
+        onClose={() => setIsNewOrgModalOpen(false)}
+        onSuccess={handleOrganizationCreated}
+      />
     </div>
   );
 };
