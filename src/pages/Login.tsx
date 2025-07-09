@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -9,6 +9,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ArrowLeft, Mail, Lock } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 
 const loginSchema = z.object({
   email: z.string().email("Digite um email válido").min(1, "Email é obrigatório"),
@@ -20,6 +22,8 @@ type LoginFormData = z.infer<typeof loginSchema>;
 const Login = () => {
   const [loginError, setLoginError] = useState<string>("");
   const navigate = useNavigate();
+  const { signIn, user, loading } = useAuth();
+  const { toast } = useToast();
   
   const {
     register,
@@ -29,20 +33,56 @@ const Login = () => {
     resolver: zodResolver(loginSchema),
   });
 
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (!loading && user) {
+      navigate("/dashboard");
+    }
+  }, [user, loading, navigate]);
+
   const onSubmit = async (data: LoginFormData) => {
     try {
       setLoginError("");
       
-      // Simulação de login - em produção, conectar com Supabase
-      if (data.email === "admin@upevolution.com.br" && data.password === "123456") {
-        navigate("/dashboard");
+      const { error } = await signIn(data.email, data.password);
+
+      if (error) {
+        let errorMessage = "Erro ao fazer login";
+        
+        switch (error.message) {
+          case "Invalid login credentials":
+            errorMessage = "Email ou senha incorretos";
+            break;
+          case "Email not confirmed":
+            errorMessage = "Email não confirmado. Verifique sua caixa de entrada";
+            break;
+          case "Too many requests":
+            errorMessage = "Muitas tentativas. Tente novamente mais tarde";
+            break;
+          default:
+            errorMessage = error.message || "Erro ao fazer login";
+        }
+
+        setLoginError(errorMessage);
       } else {
-        setLoginError("Email ou senha incorretos. Tente novamente.");
+        toast({
+          title: "Sucesso",
+          description: "Login realizado com sucesso!",
+        });
+        navigate("/dashboard");
       }
-    } catch (error) {
-      setLoginError("Erro ao fazer login. Tente novamente.");
+    } catch (error: any) {
+      setLoginError("Erro inesperado ao fazer login");
     }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-hero flex items-center justify-center p-4">
@@ -139,7 +179,7 @@ const Login = () => {
                 <Button 
                   variant="outline" 
                   className="w-full border-primary text-primary hover:bg-primary hover:text-white"
-                  onClick={() => navigate("/signup")}
+                  onClick={() => navigate("/auth")}
                 >
                   Criar nova conta
                 </Button>
@@ -148,11 +188,6 @@ const Login = () => {
           </CardContent>
         </Card>
 
-        <div className="mt-6 text-center">
-          <p className="text-xs text-muted-foreground">
-            Para teste: admin@upevolution.com.br / 123456
-          </p>
-        </div>
       </div>
     </div>
   );
