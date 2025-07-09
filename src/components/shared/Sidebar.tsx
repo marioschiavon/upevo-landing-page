@@ -14,6 +14,7 @@ import {
   LogOut
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface SidebarItem {
   icon: any;
@@ -28,9 +29,11 @@ interface SidebarProps {
 
 export const Sidebar = ({ activeItem }: SidebarProps) => {
   const navigate = useNavigate();
+  const { signOut } = useAuth();
 
-  const handleLogout = () => {
-    navigate("/");
+  const handleLogout = async () => {
+    await signOut();
+    navigate("/auth");
   };
 
   const sidebarItems: SidebarItem[] = [
