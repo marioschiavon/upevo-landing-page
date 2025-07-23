@@ -139,7 +139,9 @@ export const OrganizationProjectsTab = ({ organization, onUpdate }: Organization
                     </div>
                   </TableCell>
                   <TableCell>
-                    {project.clients ? project.clients.name : "Sem cliente"}
+                    <span className={project.clients ? "" : "text-muted-foreground italic"}>
+                      {project.clients ? project.clients.name : "Sem cliente"}
+                    </span>
                   </TableCell>
                   <TableCell>
                     <Badge variant={getStatusVariant(project.status)}>
@@ -182,7 +184,6 @@ export const OrganizationProjectsTab = ({ organization, onUpdate }: Organization
         isOpen={isNewProjectModalOpen}
         onClose={() => setIsNewProjectModalOpen(false)}
         onSuccess={handleProjectCreated}
-        clients={[]}
         organizations={[{ id: organization.id, name: organization.name }]}
       />
     </Card>

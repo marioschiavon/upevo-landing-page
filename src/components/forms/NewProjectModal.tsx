@@ -1,4 +1,5 @@
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -33,8 +34,8 @@ import { useToast } from "@/hooks/use-toast";
 
 const formSchema = z.object({
   name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
-  client_id: z.string().min(1, "Selecione um cliente"),
-  organization_id: z.string().min(1, "Selecione uma organização"),
+  client_id: z.string().optional(),
+  organization_id: z.string().min(1, "Organização é obrigatória"),
   start_date: z.string().min(1, "Selecione uma data de início"),
   currency: z.string().min(1, "Selecione uma moeda"),
   description: z.string().optional(),
@@ -46,7 +47,6 @@ interface NewProjectModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
-  clients: Array<{ id: string; name: string }>;
   organizations: Array<{ id: string; name: string }>;
 }
 
@@ -54,10 +54,11 @@ export function NewProjectModal({
   isOpen,
   onClose,
   onSuccess,
-  clients,
   organizations,
 }: NewProjectModalProps) {
   const [loading, setLoading] = useState(false);
+  const [clients, setClients] = useState<Array<{ id: string; name: string }>>([]);
+  const [loadingClients, setLoadingClients] = useState(false);
   const { toast } = useToast();
 
   const form = useForm<FormData>({
@@ -65,19 +66,59 @@ export function NewProjectModal({
     defaultValues: {
       name: "",
       client_id: "",
-      organization_id: "",
+      organization_id: organizations[0]?.id || "",
       start_date: "",
       currency: "BRL",
       description: "",
     },
   });
 
+  const selectedOrganizationId = form.watch("organization_id");
+
+  const fetchClients = async (organizationId: string) => {
+    if (!organizationId) return;
+    
+    setLoadingClients(true);
+    try {
+      const { data, error } = await supabase
+        .from('clients')
+        .select('id, name')
+        .eq('organization_id', organizationId)
+        .eq('is_active', true)
+        .order('name');
+
+      if (error) throw error;
+      setClients(data || []);
+    } catch (error) {
+      console.error('Erro ao carregar clientes:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível carregar os clientes.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingClients(false);
+    }
+  };
+
+  useEffect(() => {
+    if (selectedOrganizationId) {
+      fetchClients(selectedOrganizationId);
+    }
+  }, [selectedOrganizationId]);
+
+  useEffect(() => {
+    if (isOpen && organizations.length > 0) {
+      form.setValue("organization_id", organizations[0].id);
+    }
+  }, [isOpen, organizations, form]);
+
   const onSubmit = async (data: FormData) => {
     setLoading(true);
     try {
       const { error } = await supabase.from("projects").insert({
         name: data.name,
-        client_id: data.client_id,
+        client_id: data.client_id || null,
         organization_id: data.organization_id,
         start_date: data.start_date,
         currency: data.currency,
@@ -89,16 +130,17 @@ export function NewProjectModal({
 
       toast({
         title: "Sucesso",
-        description: "Projeto cadastrado com sucesso!",
+        description: "Projeto criado com sucesso!",
       });
 
       form.reset();
       onSuccess();
       onClose();
     } catch (error) {
+      console.error('Erro ao criar projeto:', error);
       toast({
         title: "Erro",
-        description: "Não foi possível cadastrar o projeto",
+        description: "Não foi possível criar o projeto",
         variant: "destructive",
       });
     } finally {
@@ -134,20 +176,20 @@ export function NewProjectModal({
 
             <FormField
               control={form.control}
-              name="client_id"
+              name="organization_id"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Cliente</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormLabel>Organização</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Selecione um cliente" />
+                        <SelectValue placeholder="Selecione uma organização" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {clients.map((client) => (
-                        <SelectItem key={client.id} value={client.id}>
-                          {client.name}
+                      {organizations.map((org) => (
+                        <SelectItem key={org.id} value={org.id}>
+                          {org.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -159,20 +201,21 @@ export function NewProjectModal({
 
             <FormField
               control={form.control}
-              name="organization_id"
+              name="client_id"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Organização</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormLabel>Cliente (opcional)</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Selecione uma organização" />
+                        <SelectValue placeholder={loadingClients ? "Carregando..." : "Selecione um cliente ou deixe em branco"} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {organizations.map((org) => (
-                        <SelectItem key={org.id} value={org.id}>
-                          {org.name}
+                      <SelectItem value="">Sem cliente</SelectItem>
+                      {clients.map((client) => (
+                        <SelectItem key={client.id} value={client.id}>
+                          {client.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -202,7 +245,7 @@ export function NewProjectModal({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Moeda</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue />
@@ -242,7 +285,7 @@ export function NewProjectModal({
                 Cancelar
               </Button>
               <Button type="submit" disabled={loading}>
-                {loading ? "Salvando..." : "Salvar Projeto"}
+                {loading ? "Criando..." : "Criar Projeto"}
               </Button>
             </DialogFooter>
           </form>
