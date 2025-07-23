@@ -12,8 +12,10 @@ import { FinancialSummary } from "@/components/financial/FinancialSummary";
 import { FinancialCharts } from "@/components/financial/FinancialCharts";
 import { NewClientModal } from "@/components/forms/NewClientModal";
 import { NewProjectModal } from "@/components/forms/NewProjectModal";
+import { NewBudgetModal } from "@/components/forms/NewBudgetModal";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useOrganization } from "@/contexts/OrganizationContext";
 import { Loader2 } from "lucide-react";
 
 export interface FinancialFilters {
@@ -26,21 +28,26 @@ export interface FinancialFilters {
 
 const Financial = () => {
   const { toast } = useToast();
+  const { currentOrganization } = useOrganization();
   const [loading, setLoading] = useState(true);
   const [budgets, setBudgets] = useState<any[]>([]);
   const [payments, setPayments] = useState<any[]>([]);
   const [clients, setClients] = useState<any[]>([]);
   const [projects, setProjects] = useState<any[]>([]);
-  const [organizations, setOrganizations] = useState<any[]>([]);
   const [filters, setFilters] = useState<FinancialFilters>({});
   const [isNewClientModalOpen, setIsNewClientModalOpen] = useState(false);
   const [isNewProjectModalOpen, setIsNewProjectModalOpen] = useState(false);
+  const [isNewBudgetModalOpen, setIsNewBudgetModalOpen] = useState(false);
 
   useEffect(() => {
-    fetchData();
-  }, [filters]);
+    if (currentOrganization) {
+      fetchData();
+    }
+  }, [filters, currentOrganization]);
 
   const fetchData = async () => {
+    if (!currentOrganization) return;
+    
     try {
       setLoading(true);
       
@@ -51,7 +58,8 @@ const Financial = () => {
           *,
           projects!budgets_project_id_fkey(name, client_id),
           projects!budgets_project_id_fkey.clients!projects_client_id_fkey(name)
-        `);
+        `)
+        .eq('organization_id', currentOrganization.id);
 
       if (filters.clientId) {
         budgetsQuery = budgetsQuery.eq('projects.client_id', filters.clientId);
@@ -73,15 +81,16 @@ const Financial = () => {
       
       if (budgetsError) throw budgetsError;
 
-      // Fetch payments with filters
+      // Fetch payments with filters - we'll filter by organization through project relation
       let paymentsQuery = supabase
         .from('payments')
         .select(`
           *,
-          projects!payments_project_id_fkey(name, client_id),
+          projects!payments_project_id_fkey(name, client_id, organization_id),
           projects!payments_project_id_fkey.clients!projects_client_id_fkey(name),
           budgets!payments_budget_id_fkey(description)
-        `);
+        `)
+        .eq('projects.organization_id', currentOrganization.id);
 
       if (filters.clientId) {
         paymentsQuery = paymentsQuery.eq('projects.client_id', filters.clientId);
@@ -103,22 +112,19 @@ const Financial = () => {
       
       if (paymentsError) throw paymentsError;
 
-      // Fetch clients, projects and organizations for filters
-      const [clientsResult, projectsResult, organizationsResult] = await Promise.all([
-        supabase.from('clients').select('id, name').order('name'),
-        supabase.from('projects').select('id, name, client_id').order('name'),
-        supabase.from('organizations').select('id, name').order('name')
+      // Fetch clients and projects for filters (filtered by current organization)
+      const [clientsResult, projectsResult] = await Promise.all([
+        supabase.from('clients').select('id, name').eq('organization_id', currentOrganization.id).order('name'),
+        supabase.from('projects').select('id, name, client_id').eq('organization_id', currentOrganization.id).order('name')
       ]);
 
       if (clientsResult.error) throw clientsResult.error;
       if (projectsResult.error) throw projectsResult.error;
-      if (organizationsResult.error) throw organizationsResult.error;
 
       setBudgets(budgetsData || []);
       setPayments(paymentsData || []);
       setClients(clientsResult.data || []);
       setProjects(projectsResult.data || []);
-      setOrganizations(organizationsResult.data || []);
     } catch (error) {
       toast({
         title: "Erro",
@@ -145,6 +151,10 @@ const Financial = () => {
       title: "Projeto cadastrado",
       description: "O projeto foi cadastrado com sucesso!",
     });
+  };
+
+  const handleBudgetCreated = () => {
+    fetchData();
   };
 
   if (loading) {
@@ -182,7 +192,7 @@ const Financial = () => {
             </Button>
             <Button 
               onClick={() => setIsNewProjectModalOpen(true)}
-              disabled={clients.length === 0 || organizations.length === 0}
+              disabled={clients.length === 0 || !currentOrganization}
             >
               <Plus className="h-4 w-4 mr-2" />
               Novo Projeto
@@ -207,7 +217,11 @@ const Financial = () => {
             </TabsList>
             
             <TabsContent value="budgets" className="space-y-4">
-              <BudgetsTable budgets={budgets} onUpdate={fetchData} />
+              <BudgetsTable 
+                budgets={budgets} 
+                onUpdate={fetchData}
+                onNewBudget={() => setIsNewBudgetModalOpen(true)}
+              />
             </TabsContent>
             
             <TabsContent value="payments" className="space-y-4">
@@ -221,14 +235,20 @@ const Financial = () => {
         isOpen={isNewClientModalOpen}
         onClose={() => setIsNewClientModalOpen(false)}
         onSuccess={handleClientCreated}
-        organizations={organizations}
+        organizations={currentOrganization ? [currentOrganization] : []}
       />
 
       <NewProjectModal
         isOpen={isNewProjectModalOpen}
         onClose={() => setIsNewProjectModalOpen(false)}
         onSuccess={handleProjectCreated}
-        organizations={organizations}
+        organizations={currentOrganization ? [currentOrganization] : []}
+      />
+
+      <NewBudgetModal
+        isOpen={isNewBudgetModalOpen}
+        onClose={() => setIsNewBudgetModalOpen(false)}
+        onSuccess={handleBudgetCreated}
       />
     </div>
   );

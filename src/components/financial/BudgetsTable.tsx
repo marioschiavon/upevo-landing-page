@@ -11,9 +11,10 @@ import { ptBR } from "date-fns/locale";
 interface BudgetsTableProps {
   budgets: any[];
   onUpdate: () => void;
+  onNewBudget?: () => void;
 }
 
-export const BudgetsTable = ({ budgets, onUpdate }: BudgetsTableProps) => {
+export const BudgetsTable = ({ budgets, onUpdate, onNewBudget }: BudgetsTableProps) => {
   const [loading, setLoading] = useState(false);
 
   const getStatusBadge = (status: string) => {
@@ -85,7 +86,7 @@ export const BudgetsTable = ({ budgets, onUpdate }: BudgetsTableProps) => {
               <Download className="h-4 w-4 mr-2" />
               Exportar
             </Button>
-            <Button size="sm" disabled>
+            <Button size="sm" onClick={onNewBudget} disabled={!onNewBudget}>
               <Plus className="h-4 w-4 mr-2" />
               Novo Orçamento
             </Button>

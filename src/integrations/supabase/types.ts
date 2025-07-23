@@ -38,39 +38,66 @@ export type Database = {
           currency: string
           delivery_days: number | null
           description: string | null
+          down_payment: number | null
+          estimated_hours: number | null
+          hourly_rate: number | null
           id: string
+          installments: number | null
+          monthly_duration: number | null
+          observations: string | null
           organization_id: string
+          payment_method: string | null
           project_id: string
+          start_date: string | null
           status: string
           total_value: number
           type: string
           updated_at: string
+          valid_until: string | null
         }
         Insert: {
           created_at?: string
           currency?: string
           delivery_days?: number | null
           description?: string | null
+          down_payment?: number | null
+          estimated_hours?: number | null
+          hourly_rate?: number | null
           id?: string
+          installments?: number | null
+          monthly_duration?: number | null
+          observations?: string | null
           organization_id: string
+          payment_method?: string | null
           project_id: string
+          start_date?: string | null
           status?: string
           total_value: number
           type: string
           updated_at?: string
+          valid_until?: string | null
         }
         Update: {
           created_at?: string
           currency?: string
           delivery_days?: number | null
           description?: string | null
+          down_payment?: number | null
+          estimated_hours?: number | null
+          hourly_rate?: number | null
           id?: string
+          installments?: number | null
+          monthly_duration?: number | null
+          observations?: string | null
           organization_id?: string
+          payment_method?: string | null
           project_id?: string
+          start_date?: string | null
           status?: string
           total_value?: number
           type?: string
           updated_at?: string
+          valid_until?: string | null
         }
         Relationships: [
           {
