@@ -20,11 +20,15 @@ import { useToast } from "@/hooks/use-toast";
 import { useOrganization } from "@/contexts/OrganizationContext";
 
 const budgetSchema = z.object({
+  type: z.enum(["inicial", "adicional"], {
+    required_error: "Tipo é obrigatório",
+  }),
+  client_id: z.string().min(1, "Cliente é obrigatório"),
+  project_id: z.string().optional(),
   title: z.string().min(1, "Título é obrigatório"),
   description: z.string().optional(),
   total_value: z.string().min(1, "Valor total é obrigatório"),
   currency: z.string().min(1, "Moeda é obrigatória"),
-  project_id: z.string().min(1, "Projeto é obrigatório"),
   valid_until: z.date().optional(),
   payment_method: z.string().min(1, "Forma de pagamento é obrigatória"),
   observations: z.string().optional(),
@@ -35,6 +39,14 @@ const budgetSchema = z.object({
   estimated_hours: z.number().optional(),
   monthly_duration: z.number().optional(),
   start_date: z.date().optional(),
+}).refine((data) => {
+  if (data.type === "adicional" && !data.project_id) {
+    return false;
+  }
+  return true;
+}, {
+  message: "Projeto é obrigatório para orçamentos adicionais",
+  path: ["project_id"],
 });
 
 type BudgetFormData = z.infer<typeof budgetSchema>;
@@ -50,37 +62,87 @@ export const NewBudgetModal = ({ isOpen, onClose, onSuccess }: NewBudgetModalPro
   const { currentOrganization } = useOrganization();
   const [loading, setLoading] = useState(false);
   const [projects, setProjects] = useState<any[]>([]);
+  const [clients, setClients] = useState<any[]>([]);
 
   const form = useForm<BudgetFormData>({
     resolver: zodResolver(budgetSchema),
     defaultValues: {
+      type: "inicial",
+      client_id: "",
+      project_id: "",
       title: "",
       description: "",
       total_value: "",
       currency: "BRL",
-      project_id: "",
       payment_method: "",
       observations: "",
     },
   });
 
   const watchedPaymentMethod = form.watch("payment_method");
+  const watchedBudgetType = form.watch("type");
+  const watchedClientId = form.watch("client_id");
 
   useEffect(() => {
     if (isOpen && currentOrganization) {
-      fetchProjects();
+      fetchClients();
     }
   }, [isOpen, currentOrganization]);
 
-  const fetchProjects = async () => {
+  useEffect(() => {
+    if (watchedClientId) {
+      fetchProjectsByClient(watchedClientId);
+    } else {
+      setProjects([]);
+    }
+  }, [watchedClientId, watchedBudgetType]);
+
+  useEffect(() => {
+    // Clear project selection when budget type changes
+    if (watchedBudgetType === "inicial") {
+      form.setValue("project_id", "");
+    }
+  }, [watchedBudgetType, form]);
+
+  const fetchClients = async () => {
     if (!currentOrganization) return;
 
     try {
       const { data, error } = await supabase
-        .from("projects")
-        .select("id, name, clients(name)")
+        .from("clients")
+        .select("id, name")
         .eq("organization_id", currentOrganization.id)
         .order("name");
+
+      if (error) throw error;
+      setClients(data || []);
+    } catch (error) {
+      console.error("Error fetching clients:", error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível carregar os clientes",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const fetchProjectsByClient = async (clientId: string) => {
+    if (!currentOrganization) return;
+
+    try {
+      let query = supabase
+        .from("projects")
+        .select("id, name, status")
+        .eq("organization_id", currentOrganization.id)
+        .eq("client_id", clientId)
+        .order("name");
+
+      // For "adicional" type, only show "em_andamento" projects
+      if (watchedBudgetType === "adicional") {
+        query = query.eq("status", "em_andamento");
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
       setProjects(data || []);
@@ -130,16 +192,16 @@ export const NewBudgetModal = ({ isOpen, onClose, onSuccess }: NewBudgetModalPro
     try {
       const budgetData = {
         organization_id: currentOrganization.id,
-        project_id: data.project_id,
-        type: "inicial", // Default type
-        status: "aguardando", // Default status
-        description: data.title, // Using title as description for now
+        client_id: data.client_id,
+        project_id: data.type === "inicial" ? null : data.project_id,
+        type: data.type,
+        status: "aguardando",
+        description: data.title,
         total_value: parseCurrency(data.total_value),
         currency: data.currency,
         valid_until: data.valid_until ? data.valid_until.toISOString().split('T')[0] : null,
         payment_method: data.payment_method,
         observations: data.observations || null,
-        // Conditional fields
         installments: data.payment_method === "parcelado" ? data.installments : null,
         down_payment: data.down_payment ? parseCurrency(data.down_payment) : null,
         hourly_rate: data.hourly_rate ? parseCurrency(data.hourly_rate) : null,
@@ -191,6 +253,59 @@ export const NewBudgetModal = ({ isOpen, onClose, onSuccess }: NewBudgetModalPro
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="type"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Tipo de Orçamento *</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o tipo" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="inicial">Inicial</SelectItem>
+                      <SelectItem value="adicional">Adicional</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <div className="text-sm text-muted-foreground mt-1">
+                    {watchedBudgetType === "inicial" ? 
+                      "Orçamento para um novo projeto" : 
+                      "Orçamento adicional para projeto existente"
+                    }
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="client_id"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Cliente *</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione um cliente" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {clients.map((client) => (
+                        <SelectItem key={client.id} value={client.id}>
+                          {client.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             <FormField
               control={form.control}
               name="title"
@@ -262,30 +377,35 @@ export const NewBudgetModal = ({ isOpen, onClose, onSuccess }: NewBudgetModalPro
               />
             </div>
 
-            <FormField
-              control={form.control}
-              name="project_id"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Projeto *</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione um projeto" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {projects.map((project) => (
-                        <SelectItem key={project.id} value={project.id}>
-                          {project.name} {project.clients?.name && `(${project.clients.name})`}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {watchedBudgetType === "adicional" && (
+              <FormField
+                control={form.control}
+                name="project_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Projeto *</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione um projeto em andamento" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {projects.map((project) => (
+                          <SelectItem key={project.id} value={project.id}>
+                            {project.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <div className="text-sm text-muted-foreground mt-1">
+                      Apenas projetos em andamento do cliente selecionado
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
 
             <FormField
               control={form.control}

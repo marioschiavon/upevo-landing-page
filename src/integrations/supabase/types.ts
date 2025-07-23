@@ -34,6 +34,7 @@ export type Database = {
       }
       budgets: {
         Row: {
+          client_id: string
           created_at: string
           currency: string
           delivery_days: number | null
@@ -47,7 +48,7 @@ export type Database = {
           observations: string | null
           organization_id: string
           payment_method: string | null
-          project_id: string
+          project_id: string | null
           start_date: string | null
           status: string
           total_value: number
@@ -56,6 +57,7 @@ export type Database = {
           valid_until: string | null
         }
         Insert: {
+          client_id: string
           created_at?: string
           currency?: string
           delivery_days?: number | null
@@ -69,7 +71,7 @@ export type Database = {
           observations?: string | null
           organization_id: string
           payment_method?: string | null
-          project_id: string
+          project_id?: string | null
           start_date?: string | null
           status?: string
           total_value: number
@@ -78,6 +80,7 @@ export type Database = {
           valid_until?: string | null
         }
         Update: {
+          client_id?: string
           created_at?: string
           currency?: string
           delivery_days?: number | null
@@ -91,7 +94,7 @@ export type Database = {
           observations?: string | null
           organization_id?: string
           payment_method?: string | null
-          project_id?: string
+          project_id?: string | null
           start_date?: string | null
           status?: string
           total_value?: number
@@ -112,6 +115,13 @@ export type Database = {
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_budgets_client_id"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
             referencedColumns: ["id"]
           },
         ]
