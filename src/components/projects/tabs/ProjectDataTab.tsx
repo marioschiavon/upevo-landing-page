@@ -11,6 +11,7 @@ import { useNavigate } from "react-router-dom";
 import { Trash2, Plus, MessageSquare } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { ProjectMetrics } from "../ProjectMetrics";
 
 interface ProjectDataTabProps {
   project: any;
@@ -116,6 +117,9 @@ export const ProjectDataTab = ({ project, onUpdate }: ProjectDataTabProps) => {
 
   return (
     <div className="space-y-6">
+      {/* Métricas do Projeto */}
+      <ProjectMetrics project={project} />
+      
       {/* Informações do Projeto */}
       <Card className="shadow-card">
         <CardHeader className="flex flex-row items-center justify-between">
