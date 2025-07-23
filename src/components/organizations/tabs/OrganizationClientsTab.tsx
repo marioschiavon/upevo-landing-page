@@ -144,7 +144,7 @@ export const OrganizationClientsTab = ({ organization, onUpdate }: OrganizationC
         isOpen={isNewClientModalOpen}
         onClose={() => setIsNewClientModalOpen(false)}
         onSuccess={handleClientCreated}
-        organizationId={organization.id}
+        organizations={[{ id: organization.id, name: organization.name }]}
       />
     </Card>
   );

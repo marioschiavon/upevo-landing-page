@@ -182,7 +182,8 @@ export const OrganizationProjectsTab = ({ organization, onUpdate }: Organization
         isOpen={isNewProjectModalOpen}
         onClose={() => setIsNewProjectModalOpen(false)}
         onSuccess={handleProjectCreated}
-        organizationId={organization.id}
+        clients={[]}
+        organizations={[{ id: organization.id, name: organization.name }]}
       />
     </Card>
   );
