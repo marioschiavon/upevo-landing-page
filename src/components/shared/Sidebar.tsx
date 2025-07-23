@@ -37,12 +37,12 @@ export const Sidebar = ({ activeItem }: SidebarProps) => {
   const handleLogout = async () => {
     if (isLoggingOut) return;
     
+    setIsLoggingOut(true);
+    console.log('Iniciando logout no Sidebar...');
+    
     try {
-      setIsLoggingOut(true);
-      console.log('Iniciando processo de logout...');
       await signOut();
-      console.log('Logout concluído');
-      // O redirecionamento será feito pelo AuthContext
+      // O redirecionamento será feito automaticamente pelo AuthContext
     } catch (error) {
       console.error('Erro durante o logout:', error);
       setIsLoggingOut(false);

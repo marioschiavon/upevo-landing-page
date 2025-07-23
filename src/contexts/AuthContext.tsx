@@ -3,6 +3,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 
 interface AuthContextType {
   user: User | null;
@@ -22,13 +23,42 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const { toast } = useToast();
 
   useEffect(() => {
+    console.log('Setting up auth state listener...');
+    
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         console.log('Auth state changed:', event, session);
-        setSession(session);
-        setUser(session?.user ?? null);
-        setLoading(false);
+        
+        if (event === 'SIGNED_OUT') {
+          console.log('User signed out, clearing state...');
+          setSession(null);
+          setUser(null);
+          setLoading(false);
+          
+          // Clear any remaining tokens
+          localStorage.removeItem('supabase.auth.token');
+          localStorage.removeItem('sb-uazfmqkmuqmwuubfwtst-auth-token');
+          
+          // Force redirect to login after state is cleared
+          setTimeout(() => {
+            window.location.href = '/login';
+          }, 100);
+        } else if (event === 'SIGNED_IN') {
+          console.log('User signed in');
+          setSession(session);
+          setUser(session?.user ?? null);
+          setLoading(false);
+        } else if (event === 'TOKEN_REFRESHED') {
+          console.log('Token refreshed');
+          setSession(session);
+          setUser(session?.user ?? null);
+          setLoading(false);
+        } else {
+          setSession(session);
+          setUser(session?.user ?? null);
+          setLoading(false);
+        }
       }
     );
 
@@ -40,7 +70,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      console.log('Unsubscribing from auth state changes');
+      subscription.unsubscribe();
+    };
   }, []);
 
   const createUserProfile = async (user: User) => {
@@ -89,9 +122,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signOut = async () => {
     try {
-      console.log('Iniciando logout...');
+      console.log('Iniciando processo de logout...');
       
-      // Primeiro, fazer logout no Supabase
+      // Mostrar toast de loading
+      toast({
+        title: "Fazendo logout...",
+        description: "Aguarde um momento",
+      });
+      
+      // Fazer logout no Supabase - o evento SIGNED_OUT será disparado automaticamente
       const { error } = await supabase.auth.signOut();
       
       if (error) {
@@ -104,24 +143,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return;
       }
       
-      // Forçar limpeza do localStorage se necessário
-      localStorage.removeItem('supabase.auth.token');
-      localStorage.removeItem('sb-uazfmqkmuqmwuubfwtst-auth-token');
-      
-      // Limpar estado local após o logout bem-sucedido
-      setUser(null);
-      setSession(null);
-      
-      console.log('Logout realizado com sucesso');
-      toast({
-        title: "Sucesso",
-        description: "Logout realizado com sucesso",
-      });
-      
-      // Usar window.location.href para forçar redirecionamento
-      setTimeout(() => {
-        window.location.href = '/login';
-      }, 100);
+      console.log('Logout do Supabase realizado com sucesso');
+      // O resto será tratado pelo onAuthStateChange quando o evento SIGNED_OUT for disparado
       
     } catch (error) {
       console.error('Erro no logout:', error);
