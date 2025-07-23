@@ -1,3 +1,4 @@
+
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -15,11 +16,11 @@ import {
 interface Client {
   id: string;
   name: string;
-  document: string;
-  phone: string;
-  email: string;
-  projectCount: number;
-  type: "fisica" | "juridica";
+  email: string | null;
+  phone: string | null;
+  notes: string | null;
+  organization_id: string;
+  created_at: string;
 }
 
 interface ClientsTableProps {
@@ -35,19 +36,17 @@ export const ClientsTable = ({ clients }: ClientsTableProps) => {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>ID</TableHead>
               <TableHead>Nome do Cliente</TableHead>
-              <TableHead>CNPJ/CPF</TableHead>
-              <TableHead>Telefone</TableHead>
-              <TableHead>E-mail</TableHead>
-              <TableHead>Projetos</TableHead>
+              <TableHead>Email</TableHead>
+              <TableHead>Contato</TableHead>
+              <TableHead>Observações</TableHead>
+              <TableHead>Data de Criação</TableHead>
               <TableHead className="w-32">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {clients.map((client) => (
               <TableRow key={client.id}>
-                <TableCell className="font-mono text-sm">{client.id}</TableCell>
                 <TableCell>
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
@@ -55,17 +54,18 @@ export const ClientsTable = ({ clients }: ClientsTableProps) => {
                     </div>
                     <div>
                       <span className="font-medium">{client.name}</span>
-                      <div className="text-xs text-muted-foreground">
-                        {client.type === 'fisica' ? 'Pessoa Física' : 'Pessoa Jurídica'}
-                      </div>
                     </div>
                   </div>
                 </TableCell>
-                <TableCell className="font-mono text-sm">{client.document}</TableCell>
-                <TableCell>{client.phone}</TableCell>
-                <TableCell>{client.email}</TableCell>
+                <TableCell>{client.email || "Não informado"}</TableCell>
+                <TableCell>{client.phone || "Não informado"}</TableCell>
                 <TableCell>
-                  <Badge variant="outline">{client.projectCount}</Badge>
+                  <div className="max-w-xs truncate">
+                    {client.notes || "Sem observações"}
+                  </div>
+                </TableCell>
+                <TableCell>
+                  {new Date(client.created_at).toLocaleDateString('pt-BR')}
                 </TableCell>
                 <TableCell>
                   <Button 

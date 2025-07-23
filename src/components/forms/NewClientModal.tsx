@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -21,13 +22,6 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -35,7 +29,6 @@ const formSchema = z.object({
   name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
   email: z.string().email("Email inválido").optional().or(z.literal("")),
   phone: z.string().optional(),
-  organization_id: z.string().min(1, "Selecione uma organização"),
   notes: z.string().optional(),
 });
 
@@ -58,20 +51,28 @@ export function NewClientModal({ isOpen, onClose, onSuccess, organizations }: Ne
       name: "",
       email: "",
       phone: "",
-      organization_id: "",
       notes: "",
     },
   });
 
   const onSubmit = async (data: FormData) => {
+    if (organizations.length === 0) {
+      toast({
+        title: "Erro",
+        description: "Nenhuma organização disponível",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
     try {
       const { error } = await supabase.from("clients").insert({
         name: data.name,
         email: data.email || null,
         phone: data.phone || null,
-        organization_id: data.organization_id,
         notes: data.notes || null,
+        organization_id: organizations[0].id,
       });
 
       if (error) throw error;
@@ -85,6 +86,7 @@ export function NewClientModal({ isOpen, onClose, onSuccess, organizations }: Ne
       onSuccess();
       onClose();
     } catch (error) {
+      console.error("Erro ao cadastrar cliente:", error);
       toast({
         title: "Erro",
         description: "Não foi possível cadastrar o cliente",
@@ -101,7 +103,7 @@ export function NewClientModal({ isOpen, onClose, onSuccess, organizations }: Ne
         <DialogHeader>
           <DialogTitle>Novo Cliente</DialogTitle>
           <DialogDescription>
-            Adicione um novo cliente ao sistema
+            Adicione um novo cliente para {organizations[0]?.name || "a organização"}
           </DialogDescription>
         </DialogHeader>
 
@@ -140,35 +142,10 @@ export function NewClientModal({ isOpen, onClose, onSuccess, organizations }: Ne
               name="phone"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Telefone</FormLabel>
+                  <FormLabel>Contato</FormLabel>
                   <FormControl>
                     <Input placeholder="(11) 99999-9999" {...field} />
                   </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="organization_id"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Organização</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione uma organização" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {organizations.map((org) => (
-                        <SelectItem key={org.id} value={org.id}>
-                          {org.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
                   <FormMessage />
                 </FormItem>
               )}
