@@ -51,13 +51,19 @@ const Financial = () => {
     try {
       setLoading(true);
       
-      // Fetch budgets with filters using simple joins
+      // Fetch budgets with proper client information
       let budgetsQuery = supabase
         .from('budgets')
         .select(`
           *,
-          projects(name, client_id),
-          clients(name)
+          projects (
+            id,
+            name
+          ),
+          clients (
+            id,
+            name
+          )
         `)
         .eq('organization_id', currentOrganization.id);
 
