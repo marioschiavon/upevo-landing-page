@@ -18,7 +18,9 @@ export const FinancialFilters = ({ filters, onFiltersChange, clients, projects }
     : projects;
 
   const handleFilterChange = (key: string, value: string) => {
-    const newFilters = { ...filters, [key]: value || undefined };
+    // Convert "all" back to undefined for filtering logic
+    const actualValue = value === "all" ? undefined : value;
+    const newFilters = { ...filters, [key]: actualValue };
     
     // Clear project filter if client changes
     if (key === 'clientId' && value !== filters.clientId) {
@@ -41,14 +43,14 @@ export const FinancialFilters = ({ filters, onFiltersChange, clients, projects }
           <div className="space-y-2">
             <Label htmlFor="client">Cliente</Label>
             <Select
-              value={filters.clientId || ""}
+              value={filters.clientId || "all"}
               onValueChange={(value) => handleFilterChange('clientId', value)}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Todos os clientes" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todos</SelectItem>
+                <SelectItem value="all">Todos</SelectItem>
                 {clients.map((client) => (
                   <SelectItem key={client.id} value={client.id}>
                     {client.name}
@@ -61,7 +63,7 @@ export const FinancialFilters = ({ filters, onFiltersChange, clients, projects }
           <div className="space-y-2">
             <Label htmlFor="project">Projeto</Label>
             <Select
-              value={filters.projectId || ""}
+              value={filters.projectId || "all"}
               onValueChange={(value) => handleFilterChange('projectId', value)}
               disabled={!filters.clientId}
             >
@@ -69,7 +71,7 @@ export const FinancialFilters = ({ filters, onFiltersChange, clients, projects }
                 <SelectValue placeholder="Todos os projetos" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todos</SelectItem>
+                <SelectItem value="all">Todos</SelectItem>
                 {filteredProjects.map((project) => (
                   <SelectItem key={project.id} value={project.id}>
                     {project.name}
