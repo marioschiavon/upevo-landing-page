@@ -344,7 +344,6 @@ const Projects = () => {
         isOpen={isNewProjectModalOpen}
         onClose={() => setIsNewProjectModalOpen(false)}
         onSuccess={handleProjectCreated}
-        clients={clients}
         organizations={organizations}
       />
     </div>
