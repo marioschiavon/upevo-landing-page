@@ -202,34 +202,79 @@ export type Database = {
       }
       clients: {
         Row: {
+          address: string | null
+          birth_date: string | null
+          city: string | null
+          client_type: string | null
+          cnpj: string | null
+          country: string | null
+          cpf: string | null
           created_at: string
           email: string | null
+          gender: string | null
           id: string
+          internal_notes: string | null
+          is_active: boolean | null
           name: string
           notes: string | null
           organization_id: string
           phone: string | null
+          responsible_person: string | null
+          state: string | null
+          state_registration: string | null
+          trade_name: string | null
           updated_at: string
+          zip_code: string | null
         }
         Insert: {
+          address?: string | null
+          birth_date?: string | null
+          city?: string | null
+          client_type?: string | null
+          cnpj?: string | null
+          country?: string | null
+          cpf?: string | null
           created_at?: string
           email?: string | null
+          gender?: string | null
           id?: string
+          internal_notes?: string | null
+          is_active?: boolean | null
           name: string
           notes?: string | null
           organization_id: string
           phone?: string | null
+          responsible_person?: string | null
+          state?: string | null
+          state_registration?: string | null
+          trade_name?: string | null
           updated_at?: string
+          zip_code?: string | null
         }
         Update: {
+          address?: string | null
+          birth_date?: string | null
+          city?: string | null
+          client_type?: string | null
+          cnpj?: string | null
+          country?: string | null
+          cpf?: string | null
           created_at?: string
           email?: string | null
+          gender?: string | null
           id?: string
+          internal_notes?: string | null
+          is_active?: boolean | null
           name?: string
           notes?: string | null
           organization_id?: string
           phone?: string | null
+          responsible_person?: string | null
+          state?: string | null
+          state_registration?: string | null
+          trade_name?: string | null
           updated_at?: string
+          zip_code?: string | null
         }
         Relationships: [
           {
