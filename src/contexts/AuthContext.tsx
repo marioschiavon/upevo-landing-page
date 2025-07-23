@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -24,15 +25,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        console.log('Auth state changed:', event, session);
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
-
       }
     );
 
     // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('Initial session:', session);
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
@@ -86,8 +88,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signOut = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
+    try {
+      console.log('Iniciando logout...');
+      
+      // Primeiro, limpar o estado local
+      setUser(null);
+      setSession(null);
+      
+      // Depois, chamar o signOut do Supabase
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) {
+        console.error('Erro no logout:', error);
+        toast({
+          title: "Erro",
+          description: "Erro ao fazer logout",
+          variant: "destructive",
+        });
+      } else {
+        console.log('Logout realizado com sucesso');
+        toast({
+          title: "Sucesso",
+          description: "Logout realizado com sucesso",
+        });
+      }
+    } catch (error) {
+      console.error('Erro no logout:', error);
       toast({
         title: "Erro",
         description: "Erro ao fazer logout",

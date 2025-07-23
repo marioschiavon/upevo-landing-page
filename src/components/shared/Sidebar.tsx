@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import {
   LayoutDashboard, 
@@ -32,8 +33,14 @@ export const Sidebar = ({ activeItem }: SidebarProps) => {
   const { signOut } = useAuth();
 
   const handleLogout = async () => {
-    await signOut();
-    navigate("/");
+    try {
+      console.log('Iniciando processo de logout...');
+      await signOut();
+      console.log('Logout concluído, redirecionando...');
+      navigate("/login");
+    } catch (error) {
+      console.error('Erro durante o logout:', error);
+    }
   };
 
   const sidebarItems: SidebarItem[] = [
