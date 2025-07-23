@@ -156,25 +156,34 @@ export const NewBudgetModal = ({ isOpen, onClose, onSuccess }: NewBudgetModalPro
     }
   };
 
-  const formatCurrency = (value: string) => {
-    // Remove all non-numeric characters except comma and dot
-    const numericValue = value.replace(/[^\d,.-]/g, "");
-    const floatValue = parseFloat(numericValue.replace(",", "."));
+  const formatCurrencyInput = (value: string) => {
+    // Remove tudo exceto números
+    const numbers = value.replace(/\D/g, "");
     
-    if (isNaN(floatValue)) return "";
+    if (!numbers) return "";
     
+    // Converte para centavos
+    const cents = parseInt(numbers);
+    const reais = cents / 100;
+    
+    // Formata com separadores de milhares e decimais
     return new Intl.NumberFormat("pt-BR", {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
-    }).format(floatValue);
+    }).format(reais);
   };
 
   const parseCurrency = (value: string) => {
-    return parseFloat(value.replace(/[^\d,.-]/g, "").replace(",", "."));
+    // Remove formatação e converte para número
+    const numbers = value.replace(/\D/g, "");
+    if (!numbers) return 0;
+    return parseInt(numbers) / 100;
   };
 
   const handleCurrencyChange = (field: any, value: string) => {
-    const formatted = formatCurrency(value);
+    // Permite apenas números
+    const numbersOnly = value.replace(/\D/g, "");
+    const formatted = formatCurrencyInput(numbersOnly);
     field.onChange(formatted);
   };
 
