@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -23,7 +24,8 @@ import {
   MoreHorizontal,
   Plus,
   FolderOpen as FolderIcon,
-  AlertCircle
+  AlertCircle,
+  Loader2
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -44,43 +46,82 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { NewProjectModal } from "@/components/forms/NewProjectModal";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useOrganization } from "@/contexts/OrganizationContext";
+
+interface Project {
+  id: string;
+  name: string;
+  client_name: string | null;
+  start_date: string | null;
+  currency: string;
+  status: string;
+  created_at: string;
+}
 
 const Projects = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("recent");
   const [isNewProjectModalOpen, setIsNewProjectModalOpen] = useState(false);
-  const [clients, setClients] = useState<Array<{ id: string; name: string }>>([]);
-  const [organizations, setOrganizations] = useState<Array<{ id: string; name: string }>>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const { currentOrganization } = useOrganization();
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    if (currentOrganization) {
+      fetchProjects();
+    }
+  }, [currentOrganization]);
 
-  const fetchData = async () => {
+  const fetchProjects = async () => {
+    if (!currentOrganization) return;
+
     try {
-      const [clientsResponse, organizationsResponse] = await Promise.all([
-        supabase.from('clients').select('id, name').order('name'),
-        supabase.from('organizations').select('id, name').order('name')
-      ]);
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('projects')
+        .select(`
+          id,
+          name,
+          start_date,
+          currency,
+          status,
+          created_at,
+          clients (
+            name
+          )
+        `)
+        .eq('organization_id', currentOrganization.id)
+        .order('created_at', { ascending: false });
 
-      if (clientsResponse.error) throw clientsResponse.error;
-      if (organizationsResponse.error) throw organizationsResponse.error;
+      if (error) throw error;
 
-      setClients(clientsResponse.data || []);
-      setOrganizations(organizationsResponse.data || []);
+      const formattedProjects = data?.map(project => ({
+        id: project.id,
+        name: project.name,
+        client_name: project.clients ? project.clients.name : null,
+        start_date: project.start_date,
+        currency: project.currency || 'BRL',
+        status: project.status,
+        created_at: project.created_at,
+      })) || [];
+
+      setProjects(formattedProjects);
     } catch (error) {
+      console.error('Erro ao buscar projetos:', error);
       toast({
         title: "Erro",
-        description: "Não foi possível carregar os dados",
+        description: "Não foi possível carregar os projetos",
         variant: "destructive",
       });
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleProjectCreated = () => {
-    // Recarregar lista de projetos ou atualizar estado
+    fetchProjects();
     toast({
       title: "Projeto cadastrado",
       description: "O projeto foi cadastrado com sucesso!",
@@ -91,54 +132,51 @@ const Projects = () => {
     navigate("/");
   };
 
-  // Dados mock para projetos
-  const projectsData = [
-    {
-      id: "PRJ-001",
-      name: "E-commerce Moderno",
-      client: "TechCorp Ltda",
-      startDate: "15/11/2024",
-      currency: "BRL",
-      status: "Em Andamento",
-      progress: 65,
-      statusColor: "bg-blue-500"
-    },
-    {
-      id: "PRJ-002", 
-      name: "Sistema ERP",
-      client: "IndustrialMax",
-      startDate: "02/11/2024",
-      currency: "USD",
-      status: "Finalizado",
-      progress: 100,
-      statusColor: "bg-green-500"
-    },
-    {
-      id: "PRJ-003",
-      name: "App Mobile Delivery",
-      client: "FoodExpress",
-      startDate: "28/10/2024", 
-      currency: "BRL",
-      status: "Em Pausa",
-      progress: 35,
-      statusColor: "bg-yellow-500"
-    },
-    {
-      id: "PRJ-004",
-      name: "Portal Corporativo",
-      client: "GlobalTech Solutions",
-      startDate: "20/10/2024",
-      currency: "EUR",
-      status: "Em Andamento",
-      progress: 80,
-      statusColor: "bg-purple-500"
-    }
-  ];
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return "Não definida";
+    return new Date(dateString).toLocaleDateString('pt-BR');
+  };
 
-  const filteredProjects = projectsData.filter(project =>
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'em_andamento':
+        return 'Em Andamento';
+      case 'concluido':
+        return 'Concluído';
+      case 'pausado':
+        return 'Pausado';
+      default:
+        return status;
+    }
+  };
+
+  const getStatusBadgeVariant = (status: string) => {
+    switch (status) {
+      case "concluido":
+        return "default";
+      case "pausado":
+        return "secondary";
+      default:
+        return "outline";
+    }
+  };
+
+  const filteredProjects = projects.filter(project =>
     project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    project.client.toLowerCase().includes(searchTerm.toLowerCase())
+    (project.client_name && project.client_name.toLowerCase().includes(searchTerm.toLowerCase()))
   );
+
+  const sortedProjects = [...filteredProjects].sort((a, b) => {
+    switch (sortBy) {
+      case "oldest":
+        return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+      case "alphabetical":
+        return a.name.localeCompare(b.name);
+      case "recent":
+      default:
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    }
+  });
 
   const sidebarItems = [
     { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
@@ -154,16 +192,54 @@ const Projects = () => {
     { icon: Settings, label: "Configurações" },
   ];
 
-  const getStatusBadgeVariant = (status: string) => {
-    switch (status) {
-      case "Finalizado":
-        return "default";
-      case "Em Pausa":
-        return "secondary";
-      default:
-        return "outline";
-    }
-  };
+  if (!currentOrganization) {
+    return (
+      <div className="min-h-screen bg-background flex">
+        {/* Sidebar */}
+        <aside className="w-64 bg-card border-r shadow-card">
+          <div className="p-6">
+            <img 
+              src="/lovable-uploads/e20659b7-17a3-4fba-a781-da7aeb501e68.png" 
+              alt="Upevolution Logo" 
+              className="h-8"
+            />
+          </div>
+          
+          <nav className="px-4 space-y-2">
+            {sidebarItems.map((item) => (
+              <button
+                key={item.label}
+                onClick={() => item.path && navigate(item.path)}
+                className={`w-full flex items-center gap-3 px-4 py-3 text-left rounded-lg transition-colors ${
+                  item.active 
+                    ? 'bg-primary text-primary-foreground' 
+                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                }`}
+              >
+                <item.icon className="h-5 w-5" />
+                <span className="font-medium">{item.label}</span>
+              </button>
+            ))}
+            
+            <button
+              onClick={handleLogout}
+              className="w-full flex items-center gap-3 px-4 py-3 text-left rounded-lg transition-colors text-muted-foreground hover:bg-muted hover:text-foreground mt-8"
+            >
+              <LogOut className="h-5 w-5" />
+              <span className="font-medium">Logout</span>
+            </button>
+          </nav>
+        </aside>
+
+        <main className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+            <p className="text-muted-foreground">Carregando organização...</p>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background flex">
@@ -221,16 +297,10 @@ const Projects = () => {
             <Button 
               className="mb-6" 
               onClick={() => setIsNewProjectModalOpen(true)}
-              disabled={clients.length === 0 || organizations.length === 0}
             >
               <Plus className="h-4 w-4 mr-2" />
               Novo Projeto
             </Button>
-            {(clients.length === 0 || organizations.length === 0) && (
-              <p className="text-sm text-muted-foreground">
-                É necessário ter ao menos um cliente e uma organização para criar projetos
-              </p>
-            )}
           </div>
 
           {/* Search and Filters */}
@@ -257,26 +327,30 @@ const Projects = () => {
           </div>
 
           {/* Projects Table */}
-          {filteredProjects.length > 0 ? (
+          {loading ? (
+            <Card className="shadow-card">
+              <CardContent className="p-12 text-center">
+                <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+                <p className="text-muted-foreground">Carregando projetos...</p>
+              </CardContent>
+            </Card>
+          ) : sortedProjects.length > 0 ? (
             <Card className="shadow-card">
               <CardContent className="p-0">
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>ID</TableHead>
                       <TableHead>Nome do Projeto</TableHead>
                       <TableHead>Cliente</TableHead>
                       <TableHead>Data de Início</TableHead>
                       <TableHead>Moeda</TableHead>
                       <TableHead>Status</TableHead>
-                      <TableHead>Progresso</TableHead>
                       <TableHead className="w-12"></TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredProjects.map((project) => (
+                    {sortedProjects.map((project) => (
                       <TableRow key={project.id}>
-                        <TableCell className="font-mono text-sm">{project.id}</TableCell>
                         <TableCell>
                           <div className="flex items-center gap-3">
                             <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
@@ -285,21 +359,19 @@ const Projects = () => {
                             <span className="font-medium">{project.name}</span>
                           </div>
                         </TableCell>
-                        <TableCell>{project.client}</TableCell>
-                        <TableCell>{project.startDate}</TableCell>
+                        <TableCell>
+                          <span className={!project.client_name ? "text-muted-foreground italic" : ""}>
+                            {project.client_name || "Sem cliente"}
+                          </span>
+                        </TableCell>
+                        <TableCell>{formatDate(project.start_date)}</TableCell>
                         <TableCell>
                           <Badge variant="outline">{project.currency}</Badge>
                         </TableCell>
                         <TableCell>
                           <Badge variant={getStatusBadgeVariant(project.status)}>
-                            {project.status}
+                            {getStatusLabel(project.status)}
                           </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Progress value={project.progress} className="w-16 h-2" />
-                            <span className="text-sm text-muted-foreground">{project.progress}%</span>
-                          </div>
                         </TableCell>
                         <TableCell>
                           <DropdownMenu>
@@ -330,10 +402,16 @@ const Projects = () => {
                 <div className="w-16 h-16 mx-auto mb-4 bg-muted rounded-full flex items-center justify-center">
                   <AlertCircle className="h-8 w-8 text-muted-foreground" />
                 </div>
-                <h3 className="text-lg font-semibold mb-2">Nenhum projeto criado ainda</h3>
-                <p className="text-muted-foreground">
-                  Os projetos aparecem aqui após aprovação de um orçamento.
+                <h3 className="text-lg font-semibold mb-2">Nenhum projeto encontrado</h3>
+                <p className="text-muted-foreground mb-4">
+                  {searchTerm ? "Tente ajustar os filtros de busca." : "Crie o primeiro projeto desta organização."}
                 </p>
+                {!searchTerm && (
+                  <Button onClick={() => setIsNewProjectModalOpen(true)}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Novo Projeto
+                  </Button>
+                )}
               </CardContent>
             </Card>
           )}
@@ -344,7 +422,7 @@ const Projects = () => {
         isOpen={isNewProjectModalOpen}
         onClose={() => setIsNewProjectModalOpen(false)}
         onSuccess={handleProjectCreated}
-        organizations={organizations}
+        organizations={currentOrganization ? [{ id: currentOrganization.id, name: currentOrganization.name }] : []}
       />
     </div>
   );
