@@ -25,8 +25,7 @@ const budgetSchema = z.object({
   }),
   client_id: z.string().min(1, "Cliente é obrigatório"),
   project_id: z.string().optional(),
-  title: z.string().min(1, "Título é obrigatório"),
-  description: z.string().optional(),
+  description: z.string().min(1, "Descrição é obrigatória"),
   total_value: z.string().min(1, "Valor total é obrigatório"),
   currency: z.string().min(1, "Moeda é obrigatória"),
   valid_until: z.date().optional(),
@@ -47,7 +46,44 @@ const budgetSchema = z.object({
 }, {
   message: "Projeto é obrigatório para orçamentos adicionais",
   path: ["project_id"],
+}).refine((data) => {
+  if (data.payment_method === "parcelado" && !data.down_payment) {
+    return false;
+  }
+  return true;
+}, {
+  message: "Valor da entrada é obrigatório para pagamento parcelado",
+  path: ["down_payment"],
+}).refine((data) => {
+  if (data.payment_method === "parcelado" && data.down_payment && data.total_value) {
+    const downPayment = parseCurrency(data.down_payment);
+    const totalValue = parseCurrency(data.total_value);
+    if (downPayment >= totalValue) {
+      return false;
+    }
+  }
+  return true;
+}, {
+  message: "Valor da entrada deve ser menor que o valor total",
+  path: ["down_payment"],
+}).refine((data) => {
+  if (data.payment_method === "mensal") {
+    if (!data.monthly_duration) return false;
+    const duration = parseInt(data.monthly_duration.toString());
+    return duration >= 1 && duration <= 60;
+  }
+  return true;
+}, {
+  message: "Duração mensal deve estar entre 1 e 60 meses",
+  path: ["monthly_duration"],
 });
+
+const parseCurrency = (value: string) => {
+  // Remove formatação e converte para número
+  const numbers = value.replace(/\D/g, "");
+  if (!numbers) return 0;
+  return parseInt(numbers) / 100;
+};
 
 type BudgetFormData = z.infer<typeof budgetSchema>;
 
@@ -70,7 +106,6 @@ export const NewBudgetModal = ({ isOpen, onClose, onSuccess }: NewBudgetModalPro
       type: "inicial",
       client_id: "",
       project_id: "",
-      title: "",
       description: "",
       total_value: "",
       currency: "BRL",
@@ -205,13 +240,13 @@ export const NewBudgetModal = ({ isOpen, onClose, onSuccess }: NewBudgetModalPro
         project_id: data.type === "inicial" ? null : data.project_id,
         type: data.type,
         status: "aguardando",
-        description: data.title,
+        description: data.description,
         total_value: parseCurrency(data.total_value),
         currency: data.currency,
         valid_until: data.valid_until ? data.valid_until.toISOString().split('T')[0] : null,
         payment_method: data.payment_method,
         observations: data.observations || null,
-        installments: data.payment_method === "parcelado" ? data.installments : null,
+        installments: data.payment_method === "parcelado" ? 2 : null,
         down_payment: data.down_payment ? parseCurrency(data.down_payment) : null,
         hourly_rate: data.hourly_rate ? parseCurrency(data.hourly_rate) : null,
         estimated_hours: data.payment_method === "por_hora" ? data.estimated_hours : null,
@@ -317,26 +352,12 @@ export const NewBudgetModal = ({ isOpen, onClose, onSuccess }: NewBudgetModalPro
 
             <FormField
               control={form.control}
-              name="title"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Título *</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Digite o título do orçamento" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Descrição</FormLabel>
+                  <FormLabel>Descrição *</FormLabel>
                   <FormControl>
-                    <Textarea placeholder="Descrição opcional do orçamento" {...field} />
+                    <Textarea placeholder="Digite a descrição do orçamento" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -484,49 +505,52 @@ export const NewBudgetModal = ({ isOpen, onClose, onSuccess }: NewBudgetModalPro
 
             {/* Conditional Fields */}
             {watchedPaymentMethod === "parcelado" && (
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="installments"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Quantidade de Parcelas</FormLabel>
-                      <Select onValueChange={(value) => field.onChange(parseInt(value))}>
+              <div className="space-y-4">
+                <div className="p-4 bg-muted/50 rounded-lg">
+                  <div className="text-sm font-medium text-muted-foreground mb-2">
+                    Pagamento em 2x: Entrada + Final na entrega
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="down_payment"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Valor da Entrada (1ª parcela) *</FormLabel>
                         <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione" />
-                          </SelectTrigger>
+                          <Input
+                            placeholder="0,00"
+                            value={field.value || ""}
+                            onChange={(e) => handleCurrencyChange(field, e.target.value)}
+                          />
                         </FormControl>
-                        <SelectContent>
-                          {installmentOptions.map((num) => (
-                            <SelectItem key={num} value={num.toString()}>
-                              {num}x
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                <FormField
-                  control={form.control}
-                  name="down_payment"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Valor de Entrada</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="0,00"
-                          value={field.value || ""}
-                          onChange={(e) => handleCurrencyChange(field, e.target.value)}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                  <div className="space-y-2">
+                    <Label>Valor Final (2ª parcela)</Label>
+                    <div className="p-3 bg-muted/30 rounded-md text-sm">
+                      {(() => {
+                        const totalValue = parseCurrency(form.watch("total_value") || "0");
+                        const downPayment = parseCurrency(form.watch("down_payment") || "0");
+                        const finalValue = totalValue - downPayment;
+                        return finalValue > 0 ? 
+                          new Intl.NumberFormat("pt-BR", {
+                            style: "currency",
+                            currency: "BRL",
+                          }).format(finalValue) : 
+                          "R$ 0,00";
+                      })()}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      Calculado automaticamente
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
 
