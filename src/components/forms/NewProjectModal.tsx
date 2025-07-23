@@ -118,7 +118,7 @@ export function NewProjectModal({
     try {
       const { error } = await supabase.from("projects").insert({
         name: data.name,
-        client_id: data.client_id || null,
+        client_id: data.client_id === "none" ? null : data.client_id || null,
         organization_id: data.organization_id,
         start_date: data.start_date,
         currency: data.currency,
@@ -212,7 +212,7 @@ export function NewProjectModal({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="">Sem cliente</SelectItem>
+                      <SelectItem value="none">Sem cliente</SelectItem>
                       {clients.map((client) => (
                         <SelectItem key={client.id} value={client.id}>
                           {client.name}
