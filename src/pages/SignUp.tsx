@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -7,70 +7,83 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { ArrowLeft, User, Mail, Lock, CheckCircle } from "lucide-react";
+import { ArrowLeft, Mail, Lock, User } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
-const signUpSchema = z.object({
-  name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres").min(1, "Nome é obrigatório"),
+const signupSchema = z.object({
+  fullName: z.string().min(2, "Nome deve ter pelo menos 2 caracteres").min(1, "Nome é obrigatório"),
   email: z.string().email("Digite um email válido").min(1, "Email é obrigatório"),
-  password: z.string().min(6, "Senha deve ter pelo menos 6 caracteres").min(1, "Senha é obrigatória"),
-  confirmPassword: z.string().min(1, "Confirmação de senha é obrigatória"),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "As senhas não coincidem",
-  path: ["confirmPassword"],
+  password: z.string().min(6, "Senha deve ter pelo menos 6 caracteres"),
 });
 
-type SignUpFormData = z.infer<typeof signUpSchema>;
+type SignupFormData = z.infer<typeof signupSchema>;
 
 const SignUp = () => {
-  const [signUpError, setSignUpError] = useState<string>("");
-  const [signUpSuccess, setSignUpSuccess] = useState<boolean>(false);
+  const [signupError, setSignupError] = useState<string>("");
   const navigate = useNavigate();
+  const { signUp, user, loading } = useAuth();
+  const { toast } = useToast();
   
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm<SignUpFormData>({
-    resolver: zodResolver(signUpSchema),
+  } = useForm<SignupFormData>({
+    resolver: zodResolver(signupSchema),
   });
 
-  const onSubmit = async (data: SignUpFormData) => {
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (!loading && user) {
+      navigate("/dashboard");
+    }
+  }, [user, loading, navigate]);
+
+  const onSubmit = async (data: SignupFormData) => {
     try {
-      setSignUpError("");
-      setSignUpSuccess(false);
+      setSignupError("");
       
-      // Simulação de cadastro - em produção, conectar com Supabase
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const { error } = await signUp(data.email, data.password, data.fullName);
+
+      if (error) {
+        setSignupError("Erro ao criar conta. Tente novamente mais tarde.");
+        return;
+      }
+
+      // Create user profile after signup
+      const { data: { user: newUser } } = await supabase.auth.getUser();
       
-      setSignUpSuccess(true);
-      
-      // Redirecionar para login após 2 segundos
-      setTimeout(() => {
-        navigate("/login");
-      }, 2000);
-      
-    } catch (error) {
-      setSignUpError("Erro ao criar conta. Tente novamente.");
+      if (newUser) {
+        const { error: profileError } = await supabase
+          .from('user_profiles')
+          .insert({
+            user_id: newUser.id,
+            nome: data.fullName,
+          });
+
+        if (profileError) {
+          console.error('Erro ao criar perfil:', profileError);
+          // Don't show error to user since account was created successfully
+        }
+      }
+
+      toast({
+        title: "Sucesso",
+        description: "Conta criada com sucesso!",
+      });
+      navigate("/dashboard");
+    } catch (error: any) {
+      setSignupError("Erro ao criar conta. Tente novamente mais tarde.");
     }
   };
 
-  if (signUpSuccess) {
+  if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-hero flex items-center justify-center p-4">
-        <div className="w-full max-w-md">
-          <Card className="shadow-elegant border-0">
-            <CardContent className="text-center py-12">
-              <CheckCircle className="h-16 w-16 text-primary mx-auto mb-4" />
-              <CardTitle className="text-2xl font-bold text-foreground mb-2">
-                Conta criada com sucesso!
-              </CardTitle>
-              <CardDescription className="mb-4">
-                Redirecionando para a página de login...
-              </CardDescription>
-            </CardContent>
-          </Card>
-        </div>
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
       </div>
     );
   }
@@ -97,27 +110,27 @@ const SignUp = () => {
                 className="w-16 h-16"
               />
             </div>
-            <CardTitle className="text-2xl font-bold text-foreground">Criar Nova Conta</CardTitle>
+            <CardTitle className="text-2xl font-bold text-foreground">Criar Conta</CardTitle>
             <CardDescription>
-              Preencha os dados abaixo para criar sua conta
+              Preencha os dados para criar sua conta
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="name" className="flex items-center gap-2">
+                <Label htmlFor="fullName" className="flex items-center gap-2">
                   <User className="h-4 w-4" />
-                  Nome completo
+                  Nome Completo
                 </Label>
                 <Input
-                  id="name"
+                  id="fullName"
                   type="text"
                   placeholder="Seu nome completo"
-                  {...register("name")}
-                  className={errors.name ? "border-destructive" : ""}
+                  {...register("fullName")}
+                  className={errors.fullName ? "border-destructive" : ""}
                 />
-                {errors.name && (
-                  <p className="text-sm text-destructive">{errors.name.message}</p>
+                {errors.fullName && (
+                  <p className="text-sm text-destructive">{errors.fullName.message}</p>
                 )}
               </div>
 
@@ -146,7 +159,7 @@ const SignUp = () => {
                 <Input
                   id="password"
                   type="password"
-                  placeholder="Digite sua senha"
+                  placeholder="Digite uma senha (mínimo 6 caracteres)"
                   {...register("password")}
                   className={errors.password ? "border-destructive" : ""}
                 />
@@ -155,27 +168,10 @@ const SignUp = () => {
                 )}
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="confirmPassword" className="flex items-center gap-2">
-                  <Lock className="h-4 w-4" />
-                  Confirmar senha
-                </Label>
-                <Input
-                  id="confirmPassword"
-                  type="password"
-                  placeholder="Confirme sua senha"
-                  {...register("confirmPassword")}
-                  className={errors.confirmPassword ? "border-destructive" : ""}
-                />
-                {errors.confirmPassword && (
-                  <p className="text-sm text-destructive">{errors.confirmPassword.message}</p>
-                )}
-              </div>
-
-              {signUpError && (
+              {signupError && (
                 <Alert className="border-destructive">
                   <AlertDescription className="text-destructive">
-                    {signUpError}
+                    {signupError}
                   </AlertDescription>
                 </Alert>
               )}
@@ -185,7 +181,7 @@ const SignUp = () => {
                 className="w-full bg-gradient-primary hover:shadow-glow transition-all duration-300"
                 disabled={isSubmitting}
               >
-                {isSubmitting ? "Criando conta..." : "Cadastrar"}
+                {isSubmitting ? "Criando conta..." : "Criar Conta"}
               </Button>
             </form>
 
