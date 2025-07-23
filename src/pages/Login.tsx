@@ -47,23 +47,7 @@ const Login = () => {
       const { error } = await signIn(data.email, data.password);
 
       if (error) {
-        let errorMessage = "Erro ao fazer login";
-        
-        switch (error.message) {
-          case "Invalid login credentials":
-            errorMessage = "Email ou senha incorretos";
-            break;
-          case "Email not confirmed":
-            errorMessage = "Email não confirmado. Verifique sua caixa de entrada";
-            break;
-          case "Too many requests":
-            errorMessage = "Muitas tentativas. Tente novamente mais tarde";
-            break;
-          default:
-            errorMessage = error.message || "Erro ao fazer login";
-        }
-
-        setLoginError(errorMessage);
+        setLoginError("Credenciais inválidas. Verifique e tente novamente.");
       } else {
         toast({
           title: "Sucesso",
@@ -106,7 +90,7 @@ const Login = () => {
                 className="w-16 h-16"
               />
             </div>
-            <CardTitle className="text-2xl font-bold text-foreground">Entrar na Upevolution</CardTitle>
+            <CardTitle className="text-2xl font-bold text-foreground">Login</CardTitle>
             <CardDescription>
               Digite suas credenciais para acessar sua conta
             </CardDescription>
@@ -179,9 +163,9 @@ const Login = () => {
                 <Button 
                   variant="outline" 
                   className="w-full border-primary text-primary hover:bg-primary hover:text-white"
-                  onClick={() => navigate("/auth")}
+                  onClick={() => navigate("/signup")}
                 >
-                  Criar nova conta
+                  Cadastre-se
                 </Button>
               </div>
             </div>

@@ -28,12 +28,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(session?.user ?? null);
         setLoading(false);
 
-        // Create user profile if new user signs up
-        if (event === 'SIGNED_IN' && session?.user && !user) {
-          setTimeout(() => {
-            createUserProfile(session.user);
-          }, 0);
-        }
       }
     );
 
