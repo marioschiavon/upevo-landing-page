@@ -18,7 +18,7 @@ export const OrganizationDropdown = () => {
       <DropdownMenuTrigger asChild>
         <Button variant="outline" className="flex items-center gap-2">
           <Building2 className="h-4 w-4" />
-          <span className="max-w-48 truncate">{currentOrganization.nome}</span>
+          <span className="max-w-48 truncate">{currentOrganization.name}</span>
           <ChevronDown className="h-4 w-4" />
         </Button>
       </DropdownMenuTrigger>
@@ -35,8 +35,8 @@ export const OrganizationDropdown = () => {
               <Building2 className="h-4 w-4 text-primary" />
             </div>
             <div className="flex-1">
-              <p className="font-medium">{org.nome}</p>
-              <p className="text-sm text-muted-foreground">{org.tipo_organizacao}</p>
+              <p className="font-medium">{org.name}</p>
+              <p className="text-sm text-muted-foreground">{org.category}</p>
             </div>
           </DropdownMenuItem>
         ))}

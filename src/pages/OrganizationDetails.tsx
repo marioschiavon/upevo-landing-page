@@ -30,7 +30,7 @@ const OrganizationDetails = () => {
   const navigate = useNavigate();
   const { organizations } = useOrganization();
   
-  const organization = organizations.find(org => org.id === Number(id));
+  const organization = organizations.find(org => org.id === id);
 
   if (!organization) {
     return (
@@ -86,8 +86,8 @@ const OrganizationDetails = () => {
               Voltar
             </Button>
             <div>
-              <h1 className="text-2xl font-bold text-foreground">{organization.nome}</h1>
-              <p className="text-muted-foreground">{organization.tipo_organizacao}</p>
+              <h1 className="text-2xl font-bold text-foreground">{organization.name}</h1>
+              <p className="text-muted-foreground">{organization.category}</p>
             </div>
           </div>
           <Button>
@@ -109,22 +109,22 @@ const OrganizationDetails = () => {
           <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="text-sm font-medium text-muted-foreground">Nome da Organização</label>
-              <p className="text-foreground font-medium">{organization.nome}</p>
+              <p className="text-foreground font-medium">{organization.name}</p>
             </div>
             <div>
               <label className="text-sm font-medium text-muted-foreground">Área de Atuação</label>
-              <p className="text-foreground font-medium">{organization.tipo_organizacao}</p>
+              <p className="text-foreground font-medium">{organization.category}</p>
             </div>
             <div className="md:col-span-2">
               <label className="text-sm font-medium text-muted-foreground">Descrição</label>
-              <p className="text-foreground">{organization.descricao || "Sem descrição disponível"}</p>
+              <p className="text-foreground">{organization.description || "Sem descrição disponível"}</p>
             </div>
             <div>
               <label className="text-sm font-medium text-muted-foreground flex items-center gap-1">
                 <Mail className="h-4 w-4" />
                 E-mail
               </label>
-              <p className="text-foreground">contato@{organization.nome.toLowerCase().replace(/\s+/g, '')}.com</p>
+              <p className="text-foreground">contato@{organization.name.toLowerCase().replace(/\s+/g, '')}.com</p>
             </div>
             <div>
               <label className="text-sm font-medium text-muted-foreground flex items-center gap-1">
