@@ -198,15 +198,7 @@ export type Database = {
           telefone?: string | null
           tipo_cliente?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "fk_organizacao"
-            columns: ["id_organizacao"]
-            isOneToOne: false
-            referencedRelation: "organizacoes"
-            referencedColumns: ["id_organizacao"]
-          },
-        ]
+        Relationships: []
       }
       clients: {
         Row: {
@@ -248,54 +240,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      organizacoes: {
-        Row: {
-          ativo: boolean | null
-          data_criacao: string | null
-          descricao: string | null
-          email_contato: string | null
-          endereco: string | null
-          id_organizacao: number
-          logo_url: string | null
-          nome: string
-          observacoes: string | null
-          responsavel: string | null
-          telefone_contato: string | null
-          tipo_organizacao: string | null
-          website: string | null
-        }
-        Insert: {
-          ativo?: boolean | null
-          data_criacao?: string | null
-          descricao?: string | null
-          email_contato?: string | null
-          endereco?: string | null
-          id_organizacao?: number
-          logo_url?: string | null
-          nome: string
-          observacoes?: string | null
-          responsavel?: string | null
-          telefone_contato?: string | null
-          tipo_organizacao?: string | null
-          website?: string | null
-        }
-        Update: {
-          ativo?: boolean | null
-          data_criacao?: string | null
-          descricao?: string | null
-          email_contato?: string | null
-          endereco?: string | null
-          id_organizacao?: number
-          logo_url?: string | null
-          nome?: string
-          observacoes?: string | null
-          responsavel?: string | null
-          telefone_contato?: string | null
-          tipo_organizacao?: string | null
-          website?: string | null
-        }
-        Relationships: []
       }
       organization_members: {
         Row: {
@@ -739,15 +683,7 @@ export type Database = {
           senha?: string | null
           user_auth?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "usuarios_oraganizacao_fkey"
-            columns: ["oraganizacao"]
-            isOneToOne: false
-            referencedRelation: "organizacoes"
-            referencedColumns: ["id_organizacao"]
-          },
-        ]
+        Relationships: []
       }
     }
     Views: {
