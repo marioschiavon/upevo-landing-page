@@ -12,6 +12,25 @@ import { useToast } from "@/hooks/use-toast";
 import { Plus, Search, User, Calendar, AlertCircle } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import {
+  DndContext,
+  DragEndEvent,
+  DragOverEvent,
+  DragOverlay,
+  DragStartEvent,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  useDroppable,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import {
+  useSortable,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 interface ProjectTasksTabProps {
   project: any;
@@ -29,6 +48,75 @@ interface Task {
   created_at: string;
 }
 
+// Componente para Task Card Arrastável
+const DraggableTaskCard = ({ task }: { task: Task }) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: task.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'alta':
+        return 'destructive';
+      case 'media':
+        return 'default';
+      case 'baixa':
+        return 'secondary';
+      default:
+        return 'default';
+    }
+  };
+
+  return (
+    <Card 
+      ref={setNodeRef} 
+      style={style} 
+      {...attributes} 
+      {...listeners}
+      className={`p-3 transition-shadow cursor-grab active:cursor-grabbing ${
+        task.status === 'em_andamento' ? 'border-l-4 border-l-primary' : 
+        task.status === 'concluida' ? 'border-l-4 border-l-green-500 opacity-75' : ''
+      } ${isDragging ? 'opacity-50 shadow-lg' : 'hover:shadow-md'}`}
+    >
+      <div className="space-y-2">
+        <div className="flex items-start justify-between">
+          <h4 className={`font-medium text-sm ${task.status === 'concluida' ? 'line-through' : ''}`}>
+            {task.title}
+          </h4>
+          <Badge variant={getPriorityColor(task.priority)} className="text-xs">
+            {task.priority}
+          </Badge>
+        </div>
+        
+        {task.description && (
+          <p className="text-xs text-muted-foreground line-clamp-2">
+            {task.description}
+          </p>
+        )}
+        
+        <div className="flex items-center justify-between">
+          {task.due_date && (
+            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+              <Calendar className="h-3 w-3" />
+              {format(new Date(task.due_date), 'dd/MM', { locale: ptBR })}
+            </div>
+          )}
+        </div>
+      </div>
+    </Card>
+  );
+};
+
 export const ProjectTasksTab = ({ project, onUpdate }: ProjectTasksTabProps) => {
   const { toast } = useToast();
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -38,6 +126,7 @@ export const ProjectTasksTab = ({ project, onUpdate }: ProjectTasksTabProps) => 
   const [statusFilter, setStatusFilter] = useState("all");
   const [priorityFilter, setPriorityFilter] = useState("all");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [activeId, setActiveId] = useState<string | null>(null);
   const [newTask, setNewTask] = useState({
     title: "",
     description: "",
@@ -45,6 +134,15 @@ export const ProjectTasksTab = ({ project, onUpdate }: ProjectTasksTabProps) => 
     status: "pendente",
     due_date: "",
   });
+
+  // Sensores para drag and drop
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    })
+  );
 
   useEffect(() => {
     fetchTasks();
@@ -183,6 +281,32 @@ export const ProjectTasksTab = ({ project, onUpdate }: ProjectTasksTabProps) => 
     }
   };
 
+  // Handlers do drag and drop
+  const handleDragStart = (event: DragStartEvent) => {
+    const { active } = event;
+    setActiveId(active.id as string);
+  };
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    
+    if (!over) {
+      setActiveId(null);
+      return;
+    }
+
+    const taskId = active.id as string;
+    const newStatus = over.id as string;
+    
+    // Verifica se o status mudou
+    const task = tasks.find(t => t.id === taskId);
+    if (task && task.status !== newStatus) {
+      await handleStatusChange(taskId, newStatus);
+    }
+    
+    setActiveId(null);
+  };
+
   const groupTasksByStatus = () => {
     const groups = {
       pendente: filteredTasks.filter(task => task.status === 'pendente'),
@@ -193,6 +317,40 @@ export const ProjectTasksTab = ({ project, onUpdate }: ProjectTasksTabProps) => 
   };
 
   const taskGroups = groupTasksByStatus();
+
+  // Componente de Coluna Droppable
+  const DroppableColumn = ({ id, title, tasks, badge, children }: {
+    id: string;
+    title: string;
+    tasks: Task[];
+    badge: React.ReactNode;
+    children: React.ReactNode;
+  }) => {
+    const { setNodeRef, isOver } = useDroppable({
+      id,
+    });
+
+    return (
+      <Card className={`shadow-card ${isOver ? 'ring-2 ring-primary ring-opacity-50' : ''}`}>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm flex items-center justify-between">
+            <span>{title}</span>
+            {badge}
+          </CardTitle>
+        </CardHeader>
+        <CardContent 
+          ref={setNodeRef} 
+          className={`space-y-3 min-h-[200px] transition-colors ${
+            isOver ? 'bg-primary/5' : ''
+          }`}
+        >
+          <SortableContext items={tasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
+            {children}
+          </SortableContext>
+        </CardContent>
+      </Card>
+    );
+  };
 
   return (
     <div className="space-y-6">
@@ -323,179 +481,83 @@ export const ProjectTasksTab = ({ project, onUpdate }: ProjectTasksTabProps) => 
         </CardContent>
       </Card>
 
-      {/* Quadro Kanban */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Coluna Pendente */}
-        <Card className="shadow-card">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm flex items-center justify-between">
-              <span>A Fazer</span>
-              <Badge variant="outline">{taskGroups.pendente.length}</Badge>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
+      {/* Quadro Kanban com Drag and Drop */}
+      <DndContext
+        sensors={sensors}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+      >
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Coluna Pendente */}
+          <DroppableColumn
+            id="pendente"
+            title="A Fazer"
+            tasks={taskGroups.pendente}
+            badge={<Badge variant="outline">{taskGroups.pendente.length}</Badge>}
+          >
             {taskGroups.pendente.map((task) => (
-              <Card key={task.id} className="p-3 hover:shadow-md transition-shadow cursor-pointer">
-                <div className="space-y-2">
-                  <div className="flex items-start justify-between">
-                    <h4 className="font-medium text-sm">{task.title}</h4>
-                    <Badge variant={getPriorityColor(task.priority)} className="text-xs">
-                      {task.priority}
-                    </Badge>
-                  </div>
-                  
-                  {task.description && (
-                    <p className="text-xs text-muted-foreground line-clamp-2">
-                      {task.description}
-                    </p>
-                  )}
-                  
-                  <div className="flex items-center justify-between">
-                    {task.due_date && (
-                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                        <Calendar className="h-3 w-3" />
-                        {format(new Date(task.due_date), 'dd/MM', { locale: ptBR })}
-                      </div>
-                    )}
-                    
-                    <Select value={task.status} onValueChange={(value) => handleStatusChange(task.id, value)}>
-                      <SelectTrigger className="h-6 w-20 text-xs">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="pendente">Pendente</SelectItem>
-                        <SelectItem value="em_andamento">Em Andamento</SelectItem>
-                        <SelectItem value="concluida">Concluída</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </Card>
+              <DraggableTaskCard key={task.id} task={task} />
             ))}
             
             {taskGroups.pendente.length === 0 && (
               <div className="text-center py-8 text-muted-foreground">
                 <AlertCircle className="h-8 w-8 mx-auto mb-2 opacity-50" />
                 <p className="text-sm">Nenhuma tarefa pendente</p>
+                <p className="text-xs mt-1">Arraste tarefas aqui</p>
               </div>
             )}
-          </CardContent>
-        </Card>
+          </DroppableColumn>
 
-        {/* Coluna Em Andamento */}
-        <Card className="shadow-card">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm flex items-center justify-between">
-              <span>Em Progresso</span>
-              <Badge variant="outline">{taskGroups.em_andamento.length}</Badge>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
+          {/* Coluna Em Andamento */}
+          <DroppableColumn
+            id="em_andamento"
+            title="Em Progresso"
+            tasks={taskGroups.em_andamento}
+            badge={<Badge variant="outline">{taskGroups.em_andamento.length}</Badge>}
+          >
             {taskGroups.em_andamento.map((task) => (
-              <Card key={task.id} className="p-3 hover:shadow-md transition-shadow cursor-pointer border-l-4 border-l-primary">
-                <div className="space-y-2">
-                  <div className="flex items-start justify-between">
-                    <h4 className="font-medium text-sm">{task.title}</h4>
-                    <Badge variant={getPriorityColor(task.priority)} className="text-xs">
-                      {task.priority}
-                    </Badge>
-                  </div>
-                  
-                  {task.description && (
-                    <p className="text-xs text-muted-foreground line-clamp-2">
-                      {task.description}
-                    </p>
-                  )}
-                  
-                  <div className="flex items-center justify-between">
-                    {task.due_date && (
-                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                        <Calendar className="h-3 w-3" />
-                        {format(new Date(task.due_date), 'dd/MM', { locale: ptBR })}
-                      </div>
-                    )}
-                    
-                    <Select value={task.status} onValueChange={(value) => handleStatusChange(task.id, value)}>
-                      <SelectTrigger className="h-6 w-20 text-xs">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="pendente">Pendente</SelectItem>
-                        <SelectItem value="em_andamento">Em Andamento</SelectItem>
-                        <SelectItem value="concluida">Concluída</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </Card>
+              <DraggableTaskCard key={task.id} task={task} />
             ))}
             
             {taskGroups.em_andamento.length === 0 && (
               <div className="text-center py-8 text-muted-foreground">
                 <AlertCircle className="h-8 w-8 mx-auto mb-2 opacity-50" />
                 <p className="text-sm">Nenhuma tarefa em andamento</p>
+                <p className="text-xs mt-1">Arraste tarefas aqui</p>
               </div>
             )}
-          </CardContent>
-        </Card>
+          </DroppableColumn>
 
-        {/* Coluna Concluída */}
-        <Card className="shadow-card">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm flex items-center justify-between">
-              <span>Concluído</span>
-              <Badge variant="outline">{taskGroups.concluida.length}</Badge>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
+          {/* Coluna Concluída */}
+          <DroppableColumn
+            id="concluida"
+            title="Concluído"
+            tasks={taskGroups.concluida}
+            badge={<Badge variant="outline">{taskGroups.concluida.length}</Badge>}
+          >
             {taskGroups.concluida.map((task) => (
-              <Card key={task.id} className="p-3 hover:shadow-md transition-shadow cursor-pointer border-l-4 border-l-green-500 opacity-75">
-                <div className="space-y-2">
-                  <div className="flex items-start justify-between">
-                    <h4 className="font-medium text-sm line-through">{task.title}</h4>
-                    <Badge variant={getPriorityColor(task.priority)} className="text-xs">
-                      {task.priority}
-                    </Badge>
-                  </div>
-                  
-                  {task.description && (
-                    <p className="text-xs text-muted-foreground line-clamp-2">
-                      {task.description}
-                    </p>
-                  )}
-                  
-                  <div className="flex items-center justify-between">
-                    {task.due_date && (
-                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                        <Calendar className="h-3 w-3" />
-                        {format(new Date(task.due_date), 'dd/MM', { locale: ptBR })}
-                      </div>
-                    )}
-                    
-                    <Select value={task.status} onValueChange={(value) => handleStatusChange(task.id, value)}>
-                      <SelectTrigger className="h-6 w-20 text-xs">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="pendente">Pendente</SelectItem>
-                        <SelectItem value="em_andamento">Em Andamento</SelectItem>
-                        <SelectItem value="concluida">Concluída</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </Card>
+              <DraggableTaskCard key={task.id} task={task} />
             ))}
             
             {taskGroups.concluida.length === 0 && (
               <div className="text-center py-8 text-muted-foreground">
                 <AlertCircle className="h-8 w-8 mx-auto mb-2 opacity-50" />
                 <p className="text-sm">Nenhuma tarefa concluída</p>
+                <p className="text-xs mt-1">Arraste tarefas aqui</p>
               </div>
             )}
-          </CardContent>
-        </Card>
-      </div>
+          </DroppableColumn>
+        </div>
+
+        {/* Drag Overlay */}
+        <DragOverlay>
+          {activeId ? (
+            <DraggableTaskCard 
+              task={tasks.find(t => t.id === activeId)!} 
+            />
+          ) : null}
+        </DragOverlay>
+      </DndContext>
     </div>
   );
 };
