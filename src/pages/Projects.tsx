@@ -66,19 +66,30 @@ const Projects = () => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
-  const { currentOrganization } = useOrganization();
+  const { currentOrganization, loading: orgLoading } = useOrganization();
 
   useEffect(() => {
+    console.log('Current organization changed:', currentOrganization);
     if (currentOrganization) {
       fetchProjects();
+    } else {
+      setProjects([]);
+      setLoading(false);
     }
   }, [currentOrganization]);
 
   const fetchProjects = async () => {
-    if (!currentOrganization) return;
+    if (!currentOrganization) {
+      console.log('No current organization, skipping fetch');
+      setProjects([]);
+      setLoading(false);
+      return;
+    }
 
     try {
       setLoading(true);
+      console.log('Fetching projects for organization:', currentOrganization.id);
+      
       const { data, error } = await supabase
         .from('projects')
         .select(`
@@ -95,7 +106,12 @@ const Projects = () => {
         .eq('organization_id', currentOrganization.id)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching projects:', error);
+        throw error;
+      }
+
+      console.log('Projects fetched successfully:', data);
 
       const formattedProjects = data?.map(project => ({
         id: project.id,
@@ -107,6 +123,7 @@ const Projects = () => {
         created_at: project.created_at,
       })) || [];
 
+      console.log('Formatted projects:', formattedProjects);
       setProjects(formattedProjects);
     } catch (error) {
       console.error('Erro ao buscar projetos:', error);
@@ -115,13 +132,15 @@ const Projects = () => {
         description: "Não foi possível carregar os projetos",
         variant: "destructive",
       });
+      setProjects([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleProjectCreated = () => {
-    fetchProjects();
+  const handleProjectCreated = async () => {
+    console.log('Project created, refreshing list');
+    await fetchProjects();
     toast({
       title: "Projeto cadastrado",
       description: "O projeto foi cadastrado com sucesso!",
@@ -192,7 +211,8 @@ const Projects = () => {
     { icon: Settings, label: "Configurações" },
   ];
 
-  if (!currentOrganization) {
+  // Show loading while organization context is loading
+  if (orgLoading) {
     return (
       <div className="min-h-screen bg-background flex">
         {/* Sidebar */}
@@ -235,6 +255,62 @@ const Projects = () => {
           <div className="text-center">
             <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
             <p className="text-muted-foreground">Carregando organização...</p>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  // Show message if no organization is selected
+  if (!currentOrganization) {
+    return (
+      <div className="min-h-screen bg-background flex">
+        {/* Sidebar */}
+        <aside className="w-64 bg-card border-r shadow-card">
+          <div className="p-6">
+            <img 
+              src="/lovable-uploads/e20659b7-17a3-4fba-a781-da7aeb501e68.png" 
+              alt="Upevolution Logo" 
+              className="h-8"
+            />
+          </div>
+          
+          <nav className="px-4 space-y-2">
+            {sidebarItems.map((item) => (
+              <button
+                key={item.label}
+                onClick={() => item.path && navigate(item.path)}
+                className={`w-full flex items-center gap-3 px-4 py-3 text-left rounded-lg transition-colors ${
+                  item.active 
+                    ? 'bg-primary text-primary-foreground' 
+                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                }`}
+              >
+                <item.icon className="h-5 w-5" />
+                <span className="font-medium">{item.label}</span>
+              </button>
+            ))}
+            
+            <button
+              onClick={handleLogout}
+              className="w-full flex items-center gap-3 px-4 py-3 text-left rounded-lg transition-colors text-muted-foreground hover:bg-muted hover:text-foreground mt-8"
+            >
+              <LogOut className="h-5 w-5" />
+              <span className="font-medium">Logout</span>
+            </button>
+          </nav>
+        </aside>
+
+        <main className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <Building2 className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+            <h2 className="text-xl font-semibold mb-2">Nenhuma organização selecionada</h2>
+            <p className="text-muted-foreground mb-4">
+              Você precisa estar em uma organização para visualizar os projetos.
+            </p>
+            <Button onClick={() => navigate("/organizations")}>
+              Ir para Organizações
+            </Button>
           </div>
         </main>
       </div>
@@ -286,7 +362,9 @@ const Projects = () => {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold text-foreground">Projetos</h1>
-              <p className="text-muted-foreground">Aqui você visualiza todos os projetos ativos. Projetos são gerados a partir de orçamentos aprovados.</p>
+              <p className="text-muted-foreground">
+                Projetos da organização: {currentOrganization.name}
+              </p>
             </div>
             <OrganizationDropdown />
           </div>
@@ -404,7 +482,10 @@ const Projects = () => {
                 </div>
                 <h3 className="text-lg font-semibold mb-2">Nenhum projeto encontrado</h3>
                 <p className="text-muted-foreground mb-4">
-                  {searchTerm ? "Tente ajustar os filtros de busca." : "Crie o primeiro projeto desta organização."}
+                  {searchTerm ? 
+                    "Tente ajustar os filtros de busca." : 
+                    `Crie o primeiro projeto da organização "${currentOrganization.name}".`
+                  }
                 </p>
                 {!searchTerm && (
                   <Button onClick={() => setIsNewProjectModalOpen(true)}>

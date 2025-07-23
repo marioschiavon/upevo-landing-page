@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './AuthContext';
@@ -37,40 +38,73 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
     try {
       setLoading(true);
+      console.log('Fetching organizations for user:', user.id);
       
-      // Get organizations where user is owner or member
-      const { data: orgData, error } = await supabase
+      // First, get organizations where user is owner or member
+      const { data: orgData, error: orgError } = await supabase
         .from('organizations')
-        .select(`
-          id,
-          name,
-          description,
-          category,
-          projects!inner(count)
-        `)
+        .select('id, name, description, category')
         .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('Error fetching organizations:', error);
+      if (orgError) {
+        console.error('Error fetching organizations:', orgError);
+        setOrganizations([]);
+        setCurrentOrganization(null);
+        setLoading(false);
         return;
       }
 
-      const transformedOrgs = orgData?.map(org => ({
-        id: org.id,
-        name: org.name,
-        category: org.category || 'Não definido',
-        description: org.description,
-        projectCount: org.projects?.length || 0
-      })) || [];
+      console.log('Organizations fetched:', orgData);
 
-      setOrganizations(transformedOrgs);
+      if (!orgData || orgData.length === 0) {
+        setOrganizations([]);
+        setCurrentOrganization(null);
+        setLoading(false);
+        return;
+      }
+
+      // For each organization, get project count
+      const orgsWithProjectCount = await Promise.all(
+        orgData.map(async (org) => {
+          const { data: projects, error: projectError } = await supabase
+            .from('projects')
+            .select('id')
+            .eq('organization_id', org.id);
+
+          if (projectError) {
+            console.error('Error fetching projects for org:', org.id, projectError);
+            return {
+              id: org.id,
+              name: org.name,
+              category: org.category || 'Não definido',
+              description: org.description,
+              projectCount: 0
+            };
+          }
+
+          return {
+            id: org.id,
+            name: org.name,
+            category: org.category || 'Não definido',
+            description: org.description,
+            projectCount: projects?.length || 0
+          };
+        })
+      );
+
+      console.log('Organizations with project counts:', orgsWithProjectCount);
+
+      setOrganizations(orgsWithProjectCount);
       
       // Set current organization to first one if none selected
-      if (transformedOrgs.length > 0 && !currentOrganization) {
-        setCurrentOrganization(transformedOrgs[0]);
+      if (orgsWithProjectCount.length > 0 && !currentOrganization) {
+        setCurrentOrganization(orgsWithProjectCount[0]);
+        console.log('Set current organization to:', orgsWithProjectCount[0]);
       }
     } catch (error) {
-      console.error('Error fetching organizations:', error);
+      console.error('Error in fetchOrganizations:', error);
+      setOrganizations([]);
+      setCurrentOrganization(null);
     } finally {
       setLoading(false);
     }
