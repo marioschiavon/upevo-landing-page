@@ -33,7 +33,7 @@ export const Sidebar = ({ activeItem }: SidebarProps) => {
 
   const handleLogout = async () => {
     await signOut();
-    navigate("/auth");
+    navigate("/");
   };
 
   const sidebarItems: SidebarItem[] = [
