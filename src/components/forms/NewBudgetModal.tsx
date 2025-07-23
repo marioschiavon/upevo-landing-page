@@ -223,6 +223,9 @@ export const NewBudgetModal = ({ isOpen, onClose, onSuccess }: NewBudgetModalPro
   };
 
   const onSubmit = async (data: BudgetFormData) => {
+    console.log('Form data submitted:', data);
+    console.log('Current organization:', currentOrganization);
+    
     if (!currentOrganization) {
       toast({
         title: "Erro",
@@ -230,6 +233,54 @@ export const NewBudgetModal = ({ isOpen, onClose, onSuccess }: NewBudgetModalPro
         variant: "destructive",
       });
       return;
+    }
+
+    // Validate required fields
+    if (!data.client_id) {
+      toast({
+        title: "Erro",
+        description: "Cliente é obrigatório",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (!data.description) {
+      toast({
+        title: "Erro",
+        description: "Descrição é obrigatória",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (!data.total_value || parseCurrency(data.total_value) <= 0) {
+      toast({
+        title: "Erro",
+        description: "Valor total deve ser maior que zero",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (data.payment_method === 'parcelado') {
+      if (!data.down_payment || parseCurrency(data.down_payment) <= 0) {
+        toast({
+          title: "Erro",
+          description: "Valor da entrada é obrigatório para pagamento parcelado",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      if (parseCurrency(data.down_payment) >= parseCurrency(data.total_value)) {
+        toast({
+          title: "Erro",
+          description: "Valor da entrada deve ser menor que o valor total",
+          variant: "destructive",
+        });
+        return;
+      }
     }
 
     setLoading(true);
@@ -254,10 +305,21 @@ export const NewBudgetModal = ({ isOpen, onClose, onSuccess }: NewBudgetModalPro
         start_date: data.payment_method === "mensal" && data.start_date ? data.start_date.toISOString().split('T')[0] : null,
       };
 
-      const { error } = await supabase.from("budgets").insert([budgetData]);
+      console.log('Budget data to insert:', budgetData);
 
-      if (error) throw error;
+      const { data: insertedBudget, error } = await supabase
+        .from("budgets")
+        .insert([budgetData])
+        .select()
+        .single();
 
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
+
+      console.log('Budget created successfully:', insertedBudget);
+      
       toast({
         title: "Sucesso",
         description: "Orçamento criado com sucesso!",
@@ -266,11 +328,11 @@ export const NewBudgetModal = ({ isOpen, onClose, onSuccess }: NewBudgetModalPro
       form.reset();
       onSuccess();
       onClose();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error creating budget:", error);
       toast({
         title: "Erro",
-        description: "Não foi possível criar o orçamento",
+        description: `Não foi possível criar o orçamento: ${error.message || 'Erro desconhecido'}`,
         variant: "destructive",
       });
     } finally {

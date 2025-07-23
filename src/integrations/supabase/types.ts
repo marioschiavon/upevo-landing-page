@@ -411,6 +411,7 @@ export type Database = {
           due_date: string
           id: string
           notes: string | null
+          organization_id: string
           paid_date: string | null
           payment_method: string | null
           project_id: string
@@ -425,6 +426,7 @@ export type Database = {
           due_date: string
           id?: string
           notes?: string | null
+          organization_id: string
           paid_date?: string | null
           payment_method?: string | null
           project_id: string
@@ -439,6 +441,7 @@ export type Database = {
           due_date?: string
           id?: string
           notes?: string | null
+          organization_id?: string
           paid_date?: string | null
           payment_method?: string | null
           project_id?: string
@@ -447,6 +450,13 @@ export type Database = {
           value?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "fk_payments_organization_id"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "payments_budget_id_fkey"
             columns: ["budget_id"]

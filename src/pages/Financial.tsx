@@ -51,13 +51,13 @@ const Financial = () => {
     try {
       setLoading(true);
       
-      // Fetch budgets with filters
+      // Fetch budgets with filters using simple joins
       let budgetsQuery = supabase
         .from('budgets')
         .select(`
           *,
-          projects!budgets_project_id_fkey(name, client_id),
-          projects!budgets_project_id_fkey.clients!projects_client_id_fkey(name)
+          projects(name, client_id),
+          clients(name)
         `)
         .eq('organization_id', currentOrganization.id);
 
@@ -81,16 +81,15 @@ const Financial = () => {
       
       if (budgetsError) throw budgetsError;
 
-      // Fetch payments with filters - we'll filter by organization through project relation
+      // Fetch payments with filters using direct organization filter
       let paymentsQuery = supabase
         .from('payments')
         .select(`
           *,
-          projects!payments_project_id_fkey(name, client_id, organization_id),
-          projects!payments_project_id_fkey.clients!projects_client_id_fkey(name),
-          budgets!payments_budget_id_fkey(description)
+          projects(name, client_id),
+          budgets(description, client_id)
         `)
-        .eq('projects.organization_id', currentOrganization.id);
+        .eq('organization_id', currentOrganization.id);
 
       if (filters.clientId) {
         paymentsQuery = paymentsQuery.eq('projects.client_id', filters.clientId);
