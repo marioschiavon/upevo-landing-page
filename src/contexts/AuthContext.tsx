@@ -91,27 +91,38 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       console.log('Iniciando logout...');
       
-      // Primeiro, limpar o estado local
-      setUser(null);
-      setSession(null);
-      
-      // Depois, chamar o signOut do Supabase
+      // Primeiro, fazer logout no Supabase
       const { error } = await supabase.auth.signOut();
       
       if (error) {
-        console.error('Erro no logout:', error);
+        console.error('Erro no logout do Supabase:', error);
         toast({
           title: "Erro",
           description: "Erro ao fazer logout",
           variant: "destructive",
         });
-      } else {
-        console.log('Logout realizado com sucesso');
-        toast({
-          title: "Sucesso",
-          description: "Logout realizado com sucesso",
-        });
+        return;
       }
+      
+      // Forçar limpeza do localStorage se necessário
+      localStorage.removeItem('supabase.auth.token');
+      localStorage.removeItem('sb-uazfmqkmuqmwuubfwtst-auth-token');
+      
+      // Limpar estado local após o logout bem-sucedido
+      setUser(null);
+      setSession(null);
+      
+      console.log('Logout realizado com sucesso');
+      toast({
+        title: "Sucesso",
+        description: "Logout realizado com sucesso",
+      });
+      
+      // Usar window.location.href para forçar redirecionamento
+      setTimeout(() => {
+        window.location.href = '/login';
+      }, 100);
+      
     } catch (error) {
       console.error('Erro no logout:', error);
       toast({

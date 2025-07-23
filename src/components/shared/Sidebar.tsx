@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useState } from "react";
 
 interface SidebarItem {
   icon: any;
@@ -31,15 +32,20 @@ interface SidebarProps {
 export const Sidebar = ({ activeItem }: SidebarProps) => {
   const navigate = useNavigate();
   const { signOut } = useAuth();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const handleLogout = async () => {
+    if (isLoggingOut) return;
+    
     try {
+      setIsLoggingOut(true);
       console.log('Iniciando processo de logout...');
       await signOut();
-      console.log('Logout concluído, redirecionando...');
-      navigate("/login");
+      console.log('Logout concluído');
+      // O redirecionamento será feito pelo AuthContext
     } catch (error) {
       console.error('Erro durante o logout:', error);
+      setIsLoggingOut(false);
     }
   };
 
@@ -85,10 +91,17 @@ export const Sidebar = ({ activeItem }: SidebarProps) => {
         
         <button
           onClick={handleLogout}
-          className="w-full flex items-center gap-3 px-4 py-3 text-left rounded-lg transition-colors text-muted-foreground hover:bg-muted hover:text-foreground mt-8"
+          disabled={isLoggingOut}
+          className={`w-full flex items-center gap-3 px-4 py-3 text-left rounded-lg transition-colors mt-8 ${
+            isLoggingOut 
+              ? 'text-muted-foreground/50 cursor-not-allowed' 
+              : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+          }`}
         >
           <LogOut className="h-5 w-5" />
-          <span className="font-medium">Logout</span>
+          <span className="font-medium">
+            {isLoggingOut ? 'Saindo...' : 'Logout'}
+          </span>
         </button>
       </nav>
     </aside>
