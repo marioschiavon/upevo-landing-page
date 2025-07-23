@@ -4,11 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Eye, Edit, Copy, MoreHorizontal, Plus, Download } from "lucide-react";
+import { Eye, Edit, Copy, MoreHorizontal, Plus, Download, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { ViewBudgetModal } from "@/components/forms/ViewBudgetModal";
 import { EditBudgetModal } from "@/components/forms/EditBudgetModal";
+import { DeleteConfirmationDialog } from "@/components/ui/delete-confirmation-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -25,6 +26,11 @@ interface SelectedBudget {
 
 export const BudgetsTable = ({ budgets, onUpdate, onNewBudget }: BudgetsTableProps) => {
   const [selectedBudget, setSelectedBudget] = useState<SelectedBudget | null>(null);
+  const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; budget: any | null }>({
+    open: false,
+    budget: null
+  });
+  const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
   const getStatusBadge = (status: string) => {
@@ -138,6 +144,59 @@ export const BudgetsTable = ({ budgets, onUpdate, onNewBudget }: BudgetsTablePro
     }
   };
 
+  const handleDeleteBudget = async () => {
+    if (!deleteDialog.budget) return;
+
+    try {
+      setLoading(true);
+
+      // First check if there are related payments
+      const { data: payments, error: paymentsError } = await supabase
+        .from('payments')
+        .select('id')
+        .eq('budget_id', deleteDialog.budget.id);
+
+      if (paymentsError) throw paymentsError;
+
+      // Delete related payments first
+      if (payments && payments.length > 0) {
+        const { error: deletePaymentsError } = await supabase
+          .from('payments')
+          .delete()
+          .eq('budget_id', deleteDialog.budget.id);
+
+        if (deletePaymentsError) throw deletePaymentsError;
+      }
+
+      // Then delete the budget
+      const { error } = await supabase
+        .from('budgets')
+        .delete()
+        .eq('id', deleteDialog.budget.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Orçamento excluído",
+        description: payments && payments.length > 0 
+          ? `O orçamento e ${payments.length} pagamento(s) relacionado(s) foram excluídos com sucesso.`
+          : "O orçamento foi excluído com sucesso.",
+      });
+
+      setDeleteDialog({ open: false, budget: null });
+      onUpdate();
+    } catch (error) {
+      console.error('Erro ao excluir orçamento:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível excluir o orçamento.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const closeModal = () => {
     setSelectedBudget(null);
   };
@@ -218,11 +277,18 @@ export const BudgetsTable = ({ budgets, onUpdate, onNewBudget }: BudgetsTablePro
                               <Edit className="mr-2 h-4 w-4" />
                               Editar
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleDuplicateBudget(budget)}>
-                              <Copy className="mr-2 h-4 w-4" />
-                              Duplicar
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
+                              <DropdownMenuItem onClick={() => handleDuplicateBudget(budget)}>
+                                <Copy className="mr-2 h-4 w-4" />
+                                Duplicar
+                              </DropdownMenuItem>
+                              <DropdownMenuItem 
+                                onClick={() => setDeleteDialog({ open: true, budget })}
+                                className="text-destructive"
+                              >
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Excluir
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>
                     </TableRow>
@@ -253,6 +319,19 @@ export const BudgetsTable = ({ budgets, onUpdate, onNewBudget }: BudgetsTablePro
           }}
         />
       )}
+
+      <DeleteConfirmationDialog
+        open={deleteDialog.open}
+        onOpenChange={(open) => setDeleteDialog({ open, budget: null })}
+        onConfirm={handleDeleteBudget}
+        title="Excluir Orçamento"
+        description={
+          deleteDialog.budget 
+            ? `Tem certeza que deseja excluir o orçamento "${deleteDialog.budget.description || 'N/A'}" de ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(deleteDialog.budget.total_value))}? Todos os pagamentos relacionados também serão excluídos. Esta ação não pode ser desfeita.`
+            : ""
+        }
+        loading={loading}
+      />
     </>
   );
 };

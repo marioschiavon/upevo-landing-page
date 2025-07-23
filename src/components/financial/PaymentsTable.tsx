@@ -4,9 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Edit, MoreHorizontal, Download, CheckCircle } from "lucide-react";
+import { Edit, MoreHorizontal, Download, CheckCircle, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { DeleteConfirmationDialog } from "@/components/ui/delete-confirmation-dialog";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 interface PaymentsTableProps {
   payments: any[];
@@ -15,6 +18,11 @@ interface PaymentsTableProps {
 
 export const PaymentsTable = ({ payments, onUpdate }: PaymentsTableProps) => {
   const [loading, setLoading] = useState(false);
+  const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; payment: any | null }>({
+    open: false,
+    payment: null
+  });
+  const { toast } = useToast();
 
   const getStatusBadge = (payment: any) => {
     const status = payment.status;
@@ -60,6 +68,37 @@ export const PaymentsTable = ({ payments, onUpdate }: PaymentsTableProps) => {
       dinheiro: 'Dinheiro'
     };
     return methods[method as keyof typeof methods] || method || '-';
+  };
+
+  const handleDeletePayment = async () => {
+    if (!deleteDialog.payment) return;
+
+    try {
+      setLoading(true);
+      const { error } = await supabase
+        .from('payments')
+        .delete()
+        .eq('id', deleteDialog.payment.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Pagamento excluído",
+        description: "O pagamento foi excluído com sucesso.",
+      });
+
+      setDeleteDialog({ open: false, payment: null });
+      onUpdate();
+    } catch (error) {
+      console.error('Erro ao excluir pagamento:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível excluir o pagamento.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const exportData = () => {
@@ -168,6 +207,13 @@ export const PaymentsTable = ({ payments, onUpdate }: PaymentsTableProps) => {
                               Marcar como Pago
                             </DropdownMenuItem>
                           )}
+                          <DropdownMenuItem 
+                            onClick={() => setDeleteDialog({ open: true, payment })}
+                            className="text-destructive"
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Excluir
+                          </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>
@@ -178,6 +224,19 @@ export const PaymentsTable = ({ payments, onUpdate }: PaymentsTableProps) => {
           </Table>
         </div>
       </CardContent>
+
+      <DeleteConfirmationDialog
+        open={deleteDialog.open}
+        onOpenChange={(open) => setDeleteDialog({ open, payment: null })}
+        onConfirm={handleDeletePayment}
+        title="Excluir Pagamento"
+        description={
+          deleteDialog.payment 
+            ? `Tem certeza que deseja excluir o pagamento de ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(deleteDialog.payment.value))} do projeto "${deleteDialog.payment.projects?.name || 'N/A'}"? Esta ação não pode ser desfeita.`
+            : ""
+        }
+        loading={loading}
+      />
     </Card>
   );
 };

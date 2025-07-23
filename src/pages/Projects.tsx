@@ -25,7 +25,8 @@ import {
   Plus,
   FolderOpen as FolderIcon,
   AlertCircle,
-  Loader2
+  Loader2,
+  Trash2
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -44,6 +45,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { NewProjectModal } from "@/components/forms/NewProjectModal";
+import { DeleteConfirmationDialog } from "@/components/ui/delete-confirmation-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useOrganization } from "@/contexts/OrganizationContext";
@@ -65,6 +67,11 @@ const Projects = () => {
   const [isNewProjectModalOpen, setIsNewProjectModalOpen] = useState(false);
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; project: Project | null }>({
+    open: false,
+    project: null
+  });
+  const [deleteLoading, setDeleteLoading] = useState(false);
   const { toast } = useToast();
   const { currentOrganization, loading: orgLoading } = useOrganization();
 
@@ -135,6 +142,98 @@ const Projects = () => {
       setProjects([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDeleteProject = async () => {
+    if (!deleteDialog.project) return;
+
+    try {
+      setDeleteLoading(true);
+
+      // Check for related tasks
+      const { data: tasks, error: tasksError } = await supabase
+        .from('tasks')
+        .select('id')
+        .eq('project_id', deleteDialog.project.id);
+
+      if (tasksError) throw tasksError;
+
+      // Check for related budgets
+      const { data: budgets, error: budgetsError } = await supabase
+        .from('budgets')
+        .select('id')
+        .eq('project_id', deleteDialog.project.id);
+
+      if (budgetsError) throw budgetsError;
+
+      // Check for related payments
+      const { data: payments, error: paymentsError } = await supabase
+        .from('payments')
+        .select('id')
+        .eq('project_id', deleteDialog.project.id);
+
+      if (paymentsError) throw paymentsError;
+
+      // Delete in cascade order: payments, budgets, tasks, project
+      if (payments && payments.length > 0) {
+        const { error: deletePaymentsError } = await supabase
+          .from('payments')
+          .delete()
+          .eq('project_id', deleteDialog.project.id);
+
+        if (deletePaymentsError) throw deletePaymentsError;
+      }
+
+      if (budgets && budgets.length > 0) {
+        const { error: deleteBudgetsError } = await supabase
+          .from('budgets')
+          .delete()
+          .eq('project_id', deleteDialog.project.id);
+
+        if (deleteBudgetsError) throw deleteBudgetsError;
+      }
+
+      if (tasks && tasks.length > 0) {
+        const { error: deleteTasksError } = await supabase
+          .from('tasks')
+          .delete()
+          .eq('project_id', deleteDialog.project.id);
+
+        if (deleteTasksError) throw deleteTasksError;
+      }
+
+      // Finally delete the project
+      const { error } = await supabase
+        .from('projects')
+        .delete()
+        .eq('id', deleteDialog.project.id);
+
+      if (error) throw error;
+
+      const relatedItems = [];
+      if (payments?.length) relatedItems.push(`${payments.length} pagamento(s)`);
+      if (budgets?.length) relatedItems.push(`${budgets.length} orçamento(s)`);
+      if (tasks?.length) relatedItems.push(`${tasks.length} tarefa(s)`);
+
+      toast({
+        title: "Projeto excluído",
+        description: relatedItems.length > 0 
+          ? `O projeto e ${relatedItems.join(', ')} relacionado(s) foram excluídos com sucesso.`
+          : "O projeto foi excluído com sucesso.",
+      });
+
+      setDeleteDialog({ open: false, project: null });
+      await fetchProjects();
+    } catch (error) {
+      console.error('Erro ao excluir projeto:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível excluir o projeto.",
+        variant: "destructive",
+      });
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
@@ -464,6 +563,12 @@ const Projects = () => {
                               </DropdownMenuItem>
                               <DropdownMenuItem>Editar Projeto</DropdownMenuItem>
                               <DropdownMenuItem>Relatório</DropdownMenuItem>
+                              <DropdownMenuItem 
+                                onClick={() => setDeleteDialog({ open: true, project })}
+                                className="text-destructive"
+                              >
+                                Excluir Projeto
+                              </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </TableCell>
@@ -504,6 +609,19 @@ const Projects = () => {
         onClose={() => setIsNewProjectModalOpen(false)}
         onSuccess={handleProjectCreated}
         organizations={currentOrganization ? [{ id: currentOrganization.id, name: currentOrganization.name }] : []}
+      />
+
+      <DeleteConfirmationDialog
+        open={deleteDialog.open}
+        onOpenChange={(open) => setDeleteDialog({ open, project: null })}
+        onConfirm={handleDeleteProject}
+        title="Excluir Projeto"
+        description={
+          deleteDialog.project 
+            ? `Tem certeza que deseja excluir o projeto "${deleteDialog.project.name}"? Todos os orçamentos, tarefas e pagamentos relacionados também serão excluídos. Esta ação não pode ser desfeita.`
+            : ""
+        }
+        loading={deleteLoading}
       />
     </div>
   );
