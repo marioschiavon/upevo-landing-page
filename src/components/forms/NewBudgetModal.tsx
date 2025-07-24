@@ -302,7 +302,8 @@ export const NewBudgetModal = ({ isOpen, onClose, onSuccess }: NewBudgetModalPro
         hourly_rate: data.hourly_rate ? parseCurrency(data.hourly_rate) : null,
         estimated_hours: data.payment_method === "por_hora" ? data.estimated_hours : null,
         monthly_duration: data.payment_method === "mensal" ? data.monthly_duration : null,
-        start_date: data.payment_method === "mensal" && data.start_date ? data.start_date.toISOString().split('T')[0] : null,
+        start_date: data.start_date ? data.start_date.toISOString().split('T')[0] : null,
+        delivery_days: data.payment_method === "parcelado" || data.payment_method === "a_vista_final" ? 30 : null,
       };
 
       console.log('Budget data to insert:', budgetData);

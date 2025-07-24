@@ -414,7 +414,7 @@ export type Database = {
           organization_id: string
           paid_date: string | null
           payment_method: string | null
-          project_id: string
+          project_id: string | null
           status: string
           updated_at: string
           value: number
@@ -429,7 +429,7 @@ export type Database = {
           organization_id: string
           paid_date?: string | null
           payment_method?: string | null
-          project_id: string
+          project_id?: string | null
           status?: string
           updated_at?: string
           value: number
@@ -444,7 +444,7 @@ export type Database = {
           organization_id?: string
           paid_date?: string | null
           payment_method?: string | null
-          project_id?: string
+          project_id?: string | null
           status?: string
           updated_at?: string
           value?: number
