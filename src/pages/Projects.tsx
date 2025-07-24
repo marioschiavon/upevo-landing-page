@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { Sidebar } from "@/components/shared/Sidebar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -296,60 +297,12 @@ const Projects = () => {
     }
   });
 
-  const sidebarItems = [
-    { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
-    { icon: FolderOpen, label: "Projetos", active: true },
-    { icon: Users, label: "Clientes", path: "/clients" },
-    { icon: Building2, label: "Organização", path: "/organizations" },
-    { icon: BarChart3, label: "Relatórios" },
-    { icon: Wallet, label: "Financeiro" },
-    { icon: Bell, label: "Avisos" },
-    { icon: Calendar, label: "Agenda" },
-    { icon: FileText, label: "Contratos" },
-    { icon: Headphones, label: "Suporte" },
-    { icon: Settings, label: "Configurações" },
-  ];
 
   // Show loading while organization context is loading
   if (orgLoading) {
     return (
       <div className="min-h-screen bg-background flex">
-        {/* Sidebar */}
-        <aside className="w-64 bg-card border-r shadow-card">
-          <div className="p-6">
-            <img 
-              src="/lovable-uploads/e20659b7-17a3-4fba-a781-da7aeb501e68.png" 
-              alt="Upevolution Logo" 
-              className="h-8"
-            />
-          </div>
-          
-          <nav className="px-4 space-y-2">
-            {sidebarItems.map((item) => (
-              <button
-                key={item.label}
-                onClick={() => item.path && navigate(item.path)}
-                className={`w-full flex items-center gap-3 px-4 py-3 text-left rounded-lg transition-colors ${
-                  item.active 
-                    ? 'bg-primary text-primary-foreground' 
-                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                }`}
-              >
-                <item.icon className="h-5 w-5" />
-                <span className="font-medium">{item.label}</span>
-              </button>
-            ))}
-            
-            <button
-              onClick={handleLogout}
-              className="w-full flex items-center gap-3 px-4 py-3 text-left rounded-lg transition-colors text-muted-foreground hover:bg-muted hover:text-foreground mt-8"
-            >
-              <LogOut className="h-5 w-5" />
-              <span className="font-medium">Logout</span>
-            </button>
-          </nav>
-        </aside>
-
+        <Sidebar activeItem="projects" />
         <main className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
@@ -364,42 +317,7 @@ const Projects = () => {
   if (!currentOrganization) {
     return (
       <div className="min-h-screen bg-background flex">
-        {/* Sidebar */}
-        <aside className="w-64 bg-card border-r shadow-card">
-          <div className="p-6">
-            <img 
-              src="/lovable-uploads/e20659b7-17a3-4fba-a781-da7aeb501e68.png" 
-              alt="Upevolution Logo" 
-              className="h-8"
-            />
-          </div>
-          
-          <nav className="px-4 space-y-2">
-            {sidebarItems.map((item) => (
-              <button
-                key={item.label}
-                onClick={() => item.path && navigate(item.path)}
-                className={`w-full flex items-center gap-3 px-4 py-3 text-left rounded-lg transition-colors ${
-                  item.active 
-                    ? 'bg-primary text-primary-foreground' 
-                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                }`}
-              >
-                <item.icon className="h-5 w-5" />
-                <span className="font-medium">{item.label}</span>
-              </button>
-            ))}
-            
-            <button
-              onClick={handleLogout}
-              className="w-full flex items-center gap-3 px-4 py-3 text-left rounded-lg transition-colors text-muted-foreground hover:bg-muted hover:text-foreground mt-8"
-            >
-              <LogOut className="h-5 w-5" />
-              <span className="font-medium">Logout</span>
-            </button>
-          </nav>
-        </aside>
-
+        <Sidebar activeItem="projects" />
         <main className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <Building2 className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
@@ -418,41 +336,7 @@ const Projects = () => {
 
   return (
     <div className="min-h-screen bg-background flex">
-      {/* Sidebar */}
-      <aside className="w-64 bg-card border-r shadow-card">
-        <div className="p-6">
-          <img 
-            src="/lovable-uploads/e20659b7-17a3-4fba-a781-da7aeb501e68.png" 
-            alt="Upevolution Logo" 
-            className="h-8"
-          />
-        </div>
-        
-        <nav className="px-4 space-y-2">
-          {sidebarItems.map((item) => (
-            <button
-              key={item.label}
-              onClick={() => item.path && navigate(item.path)}
-              className={`w-full flex items-center gap-3 px-4 py-3 text-left rounded-lg transition-colors ${
-                item.active 
-                  ? 'bg-primary text-primary-foreground' 
-                  : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-              }`}
-            >
-              <item.icon className="h-5 w-5" />
-              <span className="font-medium">{item.label}</span>
-            </button>
-          ))}
-          
-          <button
-            onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-4 py-3 text-left rounded-lg transition-colors text-muted-foreground hover:bg-muted hover:text-foreground mt-8"
-          >
-            <LogOut className="h-5 w-5" />
-            <span className="font-medium">Logout</span>
-          </button>
-        </nav>
-      </aside>
+      <Sidebar activeItem="projects" />
 
       {/* Main Content */}
       <main className="flex-1 overflow-auto">

@@ -1,134 +1,207 @@
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { OrganizationDropdown } from "@/components/OrganizationDropdown";
+import { Sidebar } from "@/components/shared/Sidebar";
 import { 
-  LayoutDashboard, 
-  FolderOpen, 
-  Users, 
-  Building2, 
-  BarChart3, 
-  Wallet, 
-  Bell, 
-  Calendar, 
-  FileText, 
-  Headphones, 
-  Settings, 
-  LogOut,
   ArrowUp,
   ArrowDown,
   TrendingUp,
   Clock,
   CheckCircle,
-  AlertTriangle
+  AlertTriangle,
+  Loader2,
+  Users,
+  Building2
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { useOrganization } from "@/contexts/OrganizationContext";
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const { currentOrganization, loading: orgLoading } = useOrganization();
+  const [loading, setLoading] = useState(true);
+  const [dashboardData, setDashboardData] = useState({
+    totalProjects: 0,
+    totalClients: 0,
+    totalReceived: 0,
+    totalPending: 0,
+    approvedBudgets: 0
+  });
+  const [projects, setProjects] = useState<any[]>([]);
+  const [payments, setPayments] = useState<any[]>([]);
 
-  const handleLogout = () => {
-    navigate("/");
+  useEffect(() => {
+    if (currentOrganization) {
+      fetchDashboardData();
+    } else {
+      setLoading(false);
+    }
+  }, [currentOrganization]);
+
+  const fetchDashboardData = async () => {
+    if (!currentOrganization) return;
+    
+    try {
+      setLoading(true);
+      
+      // Fetch summary data
+      const [projectsRes, clientsRes, paymentsRes, budgetsRes] = await Promise.all([
+        supabase.from('projects').select('id, name, status, created_at').eq('organization_id', currentOrganization.id),
+        supabase.from('clients').select('id').eq('organization_id', currentOrganization.id),
+        supabase.from('payments').select('*').eq('organization_id', currentOrganization.id),
+        supabase.from('budgets').select('*').eq('organization_id', currentOrganization.id).eq('status', 'aprovado')
+      ]);
+
+      if (projectsRes.error) throw projectsRes.error;
+      if (clientsRes.error) throw clientsRes.error;
+      if (paymentsRes.error) throw paymentsRes.error;
+      if (budgetsRes.error) throw budgetsRes.error;
+
+      const totalReceived = paymentsRes.data?.filter(p => p.status === 'pago').reduce((sum, p) => sum + Number(p.value), 0) || 0;
+      const totalPending = paymentsRes.data?.filter(p => p.status === 'pendente').reduce((sum, p) => sum + Number(p.value), 0) || 0;
+
+      setDashboardData({
+        totalProjects: projectsRes.data?.length || 0,
+        totalClients: clientsRes.data?.length || 0,
+        totalReceived,
+        totalPending,
+        approvedBudgets: budgetsRes.data?.length || 0
+      });
+
+      setProjects(projectsRes.data || []);
+      setPayments(paymentsRes.data || []);
+    } catch (error) {
+      console.error('Erro ao carregar dados do dashboard:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível carregar os dados do dashboard",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // Dados mock para o dashboard
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(value);
+  };
+
   const summaryData = [
-    { title: "Total de Projetos", value: "24", change: "+12%", trend: "up", color: "bg-blue-500" },
-    { title: "Total de Tarefas", value: "156", change: "+8%", trend: "up", color: "bg-purple-500" },
-    { title: "Valor a Vencer", value: "R$ 85.200", change: "-3%", trend: "down", color: "bg-yellow-500" },
-    { title: "Valor Recebido", value: "R$ 142.800", change: "+15%", trend: "up", color: "bg-green-500" },
-    { title: "Tarefas Concluídas Hoje", value: "12", change: "+25%", trend: "up", color: "bg-gray-500" },
+    { 
+      title: "Total de Projetos", 
+      value: dashboardData.totalProjects.toString(), 
+      change: "+0%", 
+      trend: "up", 
+      color: "bg-blue-500" 
+    },
+    { 
+      title: "Total de Clientes", 
+      value: dashboardData.totalClients.toString(), 
+      change: "+0%", 
+      trend: "up", 
+      color: "bg-purple-500" 
+    },
+    { 
+      title: "Valor Pendente", 
+      value: formatCurrency(dashboardData.totalPending), 
+      change: "+0%", 
+      trend: "up", 
+      color: "bg-yellow-500" 
+    },
+    { 
+      title: "Valor Recebido", 
+      value: formatCurrency(dashboardData.totalReceived), 
+      change: "+0%", 
+      trend: "up", 
+      color: "bg-green-500" 
+    },
+    { 
+      title: "Orçamentos Aprovados", 
+      value: dashboardData.approvedBudgets.toString(), 
+      change: "+0%", 
+      trend: "up", 
+      color: "bg-gray-500" 
+    },
   ];
 
-  const chartData = [
-    { month: 'Jan', valorRecebido: 120000, valorVencer: 85000, tarefasConcluidas: 45 },
-    { month: 'Fev', valorRecebido: 135000, valorVencer: 92000, tarefasConcluidas: 52 },
-    { month: 'Mar', valorRecebido: 142800, valorVencer: 85200, tarefasConcluidas: 48 },
-    { month: 'Abr', valorRecebido: 128000, valorVencer: 76000, tarefasConcluidas: 55 },
-    { month: 'Mai', valorRecebido: 155000, valorVencer: 88000, tarefasConcluidas: 62 },
-    { month: 'Jun', valorRecebido: 168000, valorVencer: 95000, tarefasConcluidas: 58 },
-  ];
+  // Generate chart data from last 6 months of payments
+  const generateChartData = () => {
+    const months = [];
+    const now = new Date();
+    
+    for (let i = 5; i >= 0; i--) {
+      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const monthName = date.toLocaleDateString('pt-BR', { month: 'short' });
+      
+      const monthPayments = payments.filter(payment => {
+        const paymentDate = new Date(payment.due_date);
+        return paymentDate.getMonth() === date.getMonth() && paymentDate.getFullYear() === date.getFullYear();
+      });
 
-  const highPriorityTasks = [
-    { project: "App E-commerce", task: "Implementar gateway de pagamento", priority: "Alta" },
-    { project: "Sistema ERP", task: "Correção de bugs críticos", priority: "Crítica" },
-    { project: "Landing Page", task: "Otimização SEO", priority: "Alta" },
-    { project: "App Mobile", task: "Testes de performance", priority: "Alta" },
-  ];
+      const valorRecebido = monthPayments.filter(p => p.status === 'pago').reduce((sum, p) => sum + Number(p.value), 0);
+      const valorVencer = monthPayments.filter(p => p.status === 'pendente').reduce((sum, p) => sum + Number(p.value), 0);
 
-  const projectStatus = [
-    { name: "App E-commerce", progress: 85, status: "Andamento", deadline: "15/12/2024", responsible: "João Silva" },
-    { name: "Sistema ERP", progress: 92, status: "Concluído", deadline: "10/12/2024", responsible: "Maria Santos" },
-    { name: "Landing Page", progress: 45, status: "Andamento", deadline: "20/12/2024", responsible: "Pedro Lima" },
-    { name: "App Mobile", progress: 0, status: "Pausado", deadline: "30/12/2024", responsible: "Ana Costa" },
-  ];
+      months.push({
+        month: monthName,
+        valorRecebido,
+        valorVencer
+      });
+    }
+    
+    return months;
+  };
 
-  const recentActivities = [
-    { action: "Tarefa concluída", description: "Gateway de pagamento implementado", time: "2 horas atrás" },
-    { action: "Novo projeto", description: "Sistema de CRM iniciado", time: "1 dia atrás" },
-    { action: "Suporte", description: "Chamado #1245 resolvido", time: "2 dias atrás" },
-    { action: "Reunião", description: "Alinhamento de projeto concluído", time: "3 dias atrás" },
-  ];
+  const chartData = generateChartData();
 
-  const upcomingAppointments = [
-    { title: "Reunião com cliente", date: "Hoje, 14:00" },
-    { title: "Review de projeto", date: "Amanhã, 10:00" },
-    { title: "Apresentação final", date: "15/12, 16:00" },
-  ];
+  // Show loading while organization context is loading
+  if (orgLoading || loading) {
+    return (
+      <div className="min-h-screen bg-background flex">
+        <Sidebar activeItem="dashboard" />
+        <main className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+            <p className="text-muted-foreground">Carregando dashboard...</p>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
-  const sidebarItems = [
-    { icon: LayoutDashboard, label: "Dashboard", active: true, path: "/dashboard" },
-    { icon: FolderOpen, label: "Projetos", path: "/projects" },
-    { icon: Users, label: "Clientes", path: "/clients" },
-    { icon: Building2, label: "Organização", path: "/organizations" },
-    { icon: BarChart3, label: "Relatórios" },
-    { icon: Wallet, label: "Financeiro" },
-    { icon: Bell, label: "Avisos" },
-    { icon: Calendar, label: "Agenda" },
-    { icon: FileText, label: "Contratos" },
-    { icon: Headphones, label: "Suporte" },
-    { icon: Settings, label: "Configurações" },
-  ];
+  // Show message if no organization is selected
+  if (!currentOrganization) {
+    return (
+      <div className="min-h-screen bg-background flex">
+        <Sidebar activeItem="dashboard" />
+        <main className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <AlertTriangle className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+            <h2 className="text-xl font-semibold mb-2">Nenhuma organização selecionada</h2>
+            <p className="text-muted-foreground mb-4">
+              Você precisa estar em uma organização para visualizar o dashboard.
+            </p>
+            <Button onClick={() => navigate("/organizations")}>
+              Ir para Organizações
+            </Button>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background flex">
-      {/* Sidebar */}
-      <aside className="w-64 bg-card border-r shadow-card">
-        <div className="p-6">
-          <img 
-            src="/lovable-uploads/e20659b7-17a3-4fba-a781-da7aeb501e68.png" 
-            alt="Upevolution Logo" 
-            className="h-8"
-          />
-        </div>
-        
-        <nav className="px-4 space-y-2">
-          {sidebarItems.map((item) => (
-            <button
-              key={item.label}
-              onClick={() => item.path && navigate(item.path)}
-              className={`w-full flex items-center gap-3 px-4 py-3 text-left rounded-lg transition-colors ${
-                item.active 
-                  ? 'bg-primary text-primary-foreground' 
-                  : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-              }`}
-            >
-              <item.icon className="h-5 w-5" />
-              <span className="font-medium">{item.label}</span>
-            </button>
-          ))}
-          
-          <button
-            onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-4 py-3 text-left rounded-lg transition-colors text-muted-foreground hover:bg-muted hover:text-foreground mt-8"
-          >
-            <LogOut className="h-5 w-5" />
-            <span className="font-medium">Logout</span>
-          </button>
-        </nav>
-      </aside>
+      <Sidebar activeItem="dashboard" />
 
       {/* Main Content */}
       <main className="flex-1 overflow-auto">
@@ -137,7 +210,9 @@ const Dashboard = () => {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
-              <p className="text-muted-foreground">Visão geral dos seus projetos e atividades</p>
+              <p className="text-muted-foreground">
+                Visão geral dos projetos e atividades - {currentOrganization.name}
+              </p>
             </div>
             <OrganizationDropdown />
           </div>
@@ -213,128 +288,160 @@ const Dashboard = () => {
           </Card>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-            {/* High Priority Tasks */}
+            {/* Recent Projects */}
             <Card className="shadow-card">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <AlertTriangle className="h-5 w-5 text-orange-500" />
-                  Tarefas com Alta Prioridade
+                  <TrendingUp className="h-5 w-5 text-blue-500" />
+                  Projetos Recentes
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {highPriorityTasks.map((task, index) => (
-                  <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div>
-                      <p className="font-medium">{task.project}</p>
-                      <p className="text-sm text-muted-foreground">{task.task}</p>
+                {projects.length > 0 ? (
+                  projects.slice(0, 4).map((project) => (
+                    <div key={project.id} className="flex items-center justify-between p-4 border rounded-lg">
+                      <div>
+                        <p className="font-medium">{project.name}</p>
+                        <p className="text-sm text-muted-foreground">
+                          Criado em {new Date(project.created_at).toLocaleDateString('pt-BR')}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge variant={
+                          project.status === 'concluido' ? 'default' : 
+                          project.status === 'pausado' ? 'secondary' : 'outline'
+                        }>
+                          {project.status === 'em_andamento' ? 'Em Andamento' :
+                           project.status === 'concluido' ? 'Concluído' :
+                           project.status === 'pausado' ? 'Pausado' : project.status}
+                        </Badge>
+                        <Button size="sm" onClick={() => navigate(`/projects/${project.id}`)}>
+                          Ver Projeto
+                        </Button>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant={task.priority === 'Crítica' ? 'destructive' : 'secondary'}>
-                        {task.priority}
-                      </Badge>
-                      <Button size="sm">Ver Tarefa</Button>
-                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-8">
+                    <p className="text-muted-foreground">Nenhum projeto encontrado</p>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="mt-2"
+                      onClick={() => navigate("/projects")}
+                    >
+                      Criar Primeiro Projeto
+                    </Button>
                   </div>
-                ))}
+                )}
               </CardContent>
             </Card>
 
-            {/* Project Status */}
-            <Card className="shadow-card">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <FolderOpen className="h-5 w-5 text-blue-500" />
-                  Status dos Projetos
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {projectStatus.map((project, index) => (
-                  <div key={index} className="p-4 border rounded-lg">
-                    <div className="flex items-center justify-between mb-2">
-                      <h4 className="font-medium">{project.name}</h4>
-                      <Badge variant={
-                        project.status === 'Concluído' ? 'default' : 
-                        project.status === 'Pausado' ? 'secondary' : 'outline'
-                      }>
-                        {project.status}
-                      </Badge>
-                    </div>
-                    <Progress value={project.progress} className="mb-2" />
-                    <div className="flex justify-between text-sm text-muted-foreground">
-                      <span>Prazo: {project.deadline}</span>
-                      <span>{project.responsible}</span>
-                    </div>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Recent Activities */}
+            {/* Recent Payments */}
             <Card className="shadow-card">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Clock className="h-5 w-5 text-green-500" />
-                  Últimas Atividades
+                  Pagamentos Recentes
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {recentActivities.map((activity, index) => (
-                  <div key={index} className="flex items-start gap-3">
-                    <div className="w-2 h-2 bg-primary rounded-full mt-2"></div>
-                    <div>
-                      <p className="font-medium text-sm">{activity.action}</p>
-                      <p className="text-sm text-muted-foreground">{activity.description}</p>
-                      <p className="text-xs text-muted-foreground">{activity.time}</p>
+                {payments.length > 0 ? (
+                  payments.slice(0, 4).map((payment) => (
+                    <div key={payment.id} className="flex items-center justify-between p-4 border rounded-lg">
+                      <div>
+                        <p className="font-medium">{payment.description || 'Pagamento'}</p>
+                        <p className="text-sm text-muted-foreground">
+                          Vencimento: {new Date(payment.due_date).toLocaleDateString('pt-BR')}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium">{formatCurrency(Number(payment.value))}</p>
+                        <Badge variant={payment.status === 'pago' ? 'default' : 'secondary'}>
+                          {payment.status === 'pago' ? 'Pago' : 'Pendente'}
+                        </Badge>
+                      </div>
                     </div>
+                  ))
+                ) : (
+                  <div className="text-center py-8">
+                    <p className="text-muted-foreground">Nenhum pagamento encontrado</p>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="mt-2"
+                      onClick={() => navigate("/financial")}
+                    >
+                      Ver Financeiro
+                    </Button>
                   </div>
-                ))}
+                )}
               </CardContent>
             </Card>
+          </div>
 
-            {/* Upcoming Appointments */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Quick Actions */}
             <Card className="shadow-card">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Calendar className="h-5 w-5 text-purple-500" />
-                  Próximos Compromissos
+                  <TrendingUp className="h-5 w-5 text-purple-500" />
+                  Ações Rápidas
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                {upcomingAppointments.map((appointment, index) => (
-                  <div key={index} className="flex items-center gap-3 p-3 border rounded-lg">
-                    <CheckCircle className="h-5 w-5 text-primary" />
-                    <div>
-                      <p className="font-medium text-sm">{appointment.title}</p>
-                      <p className="text-sm text-muted-foreground">{appointment.date}</p>
-                    </div>
-                  </div>
-                ))}
+              <CardContent className="space-y-3">
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-start"
+                  onClick={() => navigate("/projects")}
+                >
+                  <TrendingUp className="h-4 w-4 mr-2" />
+                  Criar Novo Projeto
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-start"
+                  onClick={() => navigate("/clients")}
+                >
+                  <Users className="h-4 w-4 mr-2" />
+                  Adicionar Cliente
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-start"
+                  onClick={() => navigate("/financial")}
+                >
+                  <TrendingUp className="h-4 w-4 mr-2" />
+                  Ver Financeiro
+                </Button>
               </CardContent>
             </Card>
 
-            {/* Currency Exchange */}
+            {/* Organization Info */}
             <Card className="shadow-card">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Wallet className="h-5 w-5 text-yellow-500" />
-                  Cotações
+                  <AlertTriangle className="h-5 w-5 text-yellow-500" />
+                  Informações da Organização
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="space-y-3">
-                  <div className="flex justify-between">
-                    <span className="text-sm">USD/BRL</span>
-                    <span className="font-medium">R$ 5,25</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm">EUR/BRL</span>
-                    <span className="font-medium">R$ 5,68</span>
-                  </div>
-                  <div className="border-t pt-3">
-                    <p className="text-sm text-muted-foreground">Valor recebido em USD</p>
-                    <p className="text-lg font-bold text-primary">$ 27,200</p>
+                <div>
+                  <p className="font-medium">{currentOrganization.name}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {currentOrganization.description || "Sem descrição"}
+                  </p>
+                </div>
+                <div className="border-t pt-3">
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <p className="text-muted-foreground">Projetos</p>
+                      <p className="font-medium">{dashboardData.totalProjects}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Clientes</p>
+                      <p className="font-medium">{dashboardData.totalClients}</p>
+                    </div>
                   </div>
                 </div>
               </CardContent>
