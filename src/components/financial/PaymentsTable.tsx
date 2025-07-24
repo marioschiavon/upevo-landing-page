@@ -8,6 +8,7 @@ import { Edit, MoreHorizontal, Download, CheckCircle, Trash2 } from "lucide-reac
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { DeleteConfirmationDialog } from "@/components/ui/delete-confirmation-dialog";
+import { EditPaymentModal } from "@/components/forms/EditPaymentModal";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -19,6 +20,10 @@ interface PaymentsTableProps {
 export const PaymentsTable = ({ payments, onUpdate }: PaymentsTableProps) => {
   const [loading, setLoading] = useState(false);
   const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; payment: any | null }>({
+    open: false,
+    payment: null
+  });
+  const [editModal, setEditModal] = useState<{ open: boolean; payment: any | null }>({
     open: false,
     payment: null
   });
@@ -68,6 +73,38 @@ export const PaymentsTable = ({ payments, onUpdate }: PaymentsTableProps) => {
       dinheiro: 'Dinheiro'
     };
     return methods[method as keyof typeof methods] || method || '-';
+  };
+
+  const handleMarkAsPaid = async (payment: any) => {
+    try {
+      setLoading(true);
+      const { error } = await supabase
+        .from('payments')
+        .update({ 
+          status: 'pago',
+          paid_date: new Date().toISOString().split('T')[0],
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', payment.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Pagamento atualizado",
+        description: "O pagamento foi marcado como pago.",
+      });
+
+      onUpdate();
+    } catch (error) {
+      console.error('Erro ao marcar pagamento como pago:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível atualizar o pagamento.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleDeletePayment = async () => {
@@ -197,12 +234,12 @@ export const PaymentsTable = ({ payments, onUpdate }: PaymentsTableProps) => {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => setEditModal({ open: true, payment })}>
                             <Edit className="mr-2 h-4 w-4" />
                             Editar
                           </DropdownMenuItem>
                           {payment.status !== 'pago' && (
-                            <DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleMarkAsPaid(payment)}>
                               <CheckCircle className="mr-2 h-4 w-4" />
                               Marcar como Pago
                             </DropdownMenuItem>
@@ -224,6 +261,13 @@ export const PaymentsTable = ({ payments, onUpdate }: PaymentsTableProps) => {
           </Table>
         </div>
       </CardContent>
+
+      <EditPaymentModal
+        open={editModal.open}
+        onOpenChange={(open) => setEditModal({ open, payment: open ? editModal.payment : null })}
+        payment={editModal.payment}
+        onUpdate={onUpdate}
+      />
 
       <DeleteConfirmationDialog
         open={deleteDialog.open}
