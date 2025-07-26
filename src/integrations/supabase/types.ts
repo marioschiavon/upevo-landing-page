@@ -14,24 +14,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      apps: {
-        Row: {
-          created_at: string
-          id: number
-          Nome: string
-        }
-        Insert: {
-          created_at?: string
-          id?: number
-          Nome: string
-        }
-        Update: {
-          created_at?: string
-          id?: number
-          Nome?: string
-        }
-        Relationships: []
-      }
       budgets: {
         Row: {
           client_id: string
@@ -125,117 +107,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      categorias: {
-        Row: {
-          cor: string | null
-          data_criacao: string | null
-          id: string
-          nome: string
-          usuario_id: string
-        }
-        Insert: {
-          cor?: string | null
-          data_criacao?: string | null
-          id?: string
-          nome: string
-          usuario_id: string
-        }
-        Update: {
-          cor?: string | null
-          data_criacao?: string | null
-          id?: string
-          nome?: string
-          usuario_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "categorias_usuario_id_fkey"
-            columns: ["usuario_id"]
-            isOneToOne: false
-            referencedRelation: "estatisticas_usuario"
-            referencedColumns: ["usuario_id"]
-          },
-          {
-            foreignKeyName: "categorias_usuario_id_fkey"
-            columns: ["usuario_id"]
-            isOneToOne: false
-            referencedRelation: "usuarios"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      cliente: {
-        Row: {
-          ativo: boolean | null
-          cep: string | null
-          cidade: string | null
-          cnpj: string | null
-          cpf: string | null
-          data_cadastro: string | null
-          data_nascimento: string | null
-          email: string
-          endereco: string | null
-          estado: string | null
-          id_cliente: number
-          id_organizacao: number | null
-          inscricao_estadual: string | null
-          nome: string
-          nome_fantasia: string | null
-          obs: string | null
-          pais: string | null
-          responsavel: string | null
-          sexo: string | null
-          telefone: string | null
-          tipo_cliente: string
-        }
-        Insert: {
-          ativo?: boolean | null
-          cep?: string | null
-          cidade?: string | null
-          cnpj?: string | null
-          cpf?: string | null
-          data_cadastro?: string | null
-          data_nascimento?: string | null
-          email: string
-          endereco?: string | null
-          estado?: string | null
-          id_cliente?: number
-          id_organizacao?: number | null
-          inscricao_estadual?: string | null
-          nome: string
-          nome_fantasia?: string | null
-          obs?: string | null
-          pais?: string | null
-          responsavel?: string | null
-          sexo?: string | null
-          telefone?: string | null
-          tipo_cliente: string
-        }
-        Update: {
-          ativo?: boolean | null
-          cep?: string | null
-          cidade?: string | null
-          cnpj?: string | null
-          cpf?: string | null
-          data_cadastro?: string | null
-          data_nascimento?: string | null
-          email?: string
-          endereco?: string | null
-          estado?: string | null
-          id_cliente?: number
-          id_organizacao?: number | null
-          inscricao_estadual?: string | null
-          nome?: string
-          nome_fantasia?: string | null
-          obs?: string | null
-          pais?: string | null
-          responsavel?: string | null
-          sexo?: string | null
-          telefone?: string | null
-          tipo_cliente?: string
-        }
-        Relationships: []
       }
       clients: {
         Row: {
@@ -527,64 +398,6 @@ export type Database = {
           },
         ]
       }
-      tarefas: {
-        Row: {
-          categoria_id: string | null
-          data_conclusao: string | null
-          data_criacao: string | null
-          descricao: string | null
-          id: string
-          prioridade: string | null
-          status: string | null
-          titulo: string
-          usuario_id: string
-        }
-        Insert: {
-          categoria_id?: string | null
-          data_conclusao?: string | null
-          data_criacao?: string | null
-          descricao?: string | null
-          id?: string
-          prioridade?: string | null
-          status?: string | null
-          titulo: string
-          usuario_id: string
-        }
-        Update: {
-          categoria_id?: string | null
-          data_conclusao?: string | null
-          data_criacao?: string | null
-          descricao?: string | null
-          id?: string
-          prioridade?: string | null
-          status?: string | null
-          titulo?: string
-          usuario_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "tarefas_categoria_id_fkey"
-            columns: ["categoria_id"]
-            isOneToOne: false
-            referencedRelation: "categorias"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "tarefas_usuario_id_fkey"
-            columns: ["usuario_id"]
-            isOneToOne: false
-            referencedRelation: "estatisticas_usuario"
-            referencedColumns: ["usuario_id"]
-          },
-          {
-            foreignKeyName: "tarefas_usuario_id_fkey"
-            columns: ["usuario_id"]
-            isOneToOne: false
-            referencedRelation: "usuarios"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       task_logs: {
         Row: {
           created_at: string
@@ -741,53 +554,9 @@ export type Database = {
         }
         Relationships: []
       }
-      usuarios: {
-        Row: {
-          app: string | null
-          data_criacao: string | null
-          email: string
-          foto: string | null
-          id: string
-          nome: string
-          oraganizacao: number | null
-          senha: string | null
-          user_auth: string | null
-        }
-        Insert: {
-          app?: string | null
-          data_criacao?: string | null
-          email: string
-          foto?: string | null
-          id?: string
-          nome: string
-          oraganizacao?: number | null
-          senha?: string | null
-          user_auth?: string | null
-        }
-        Update: {
-          app?: string | null
-          data_criacao?: string | null
-          email?: string
-          foto?: string | null
-          id?: string
-          nome?: string
-          oraganizacao?: number | null
-          senha?: string | null
-          user_auth?: string | null
-        }
-        Relationships: []
-      }
     }
     Views: {
-      estatisticas_usuario: {
-        Row: {
-          tarefas_concluidas: number | null
-          tarefas_pendentes: number | null
-          total_tarefas: number | null
-          usuario_id: string | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
       check_user_organization_membership: {
