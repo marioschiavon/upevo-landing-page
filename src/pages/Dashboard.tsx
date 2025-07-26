@@ -78,7 +78,7 @@ const Dashboard = () => {
       setProjects(projectsRes.data || []);
       setPayments(paymentsRes.data || []);
     } catch (error) {
-      console.error('Erro ao carregar dados do dashboard:', error);
+      // Error handled via toast - removed console log for production security
       toast({
         title: "Erro",
         description: "Não foi possível carregar os dados do dashboard",
@@ -102,35 +102,35 @@ const Dashboard = () => {
       value: dashboardData.totalProjects.toString(), 
       change: "+0%", 
       trend: "up", 
-      color: "bg-blue-500" 
+      color: "bg-primary" 
     },
     { 
       title: "Total de Clientes", 
       value: dashboardData.totalClients.toString(), 
       change: "+0%", 
       trend: "up", 
-      color: "bg-purple-500" 
+      color: "bg-secondary" 
     },
     { 
       title: "Valor Pendente", 
       value: formatCurrency(dashboardData.totalPending), 
       change: "+0%", 
       trend: "up", 
-      color: "bg-yellow-500" 
+      color: "bg-accent" 
     },
     { 
       title: "Valor Recebido", 
       value: formatCurrency(dashboardData.totalReceived), 
       change: "+0%", 
       trend: "up", 
-      color: "bg-green-500" 
+      color: "bg-primary-glow" 
     },
     { 
       title: "Orçamentos Aprovados", 
       value: dashboardData.approvedBudgets.toString(), 
       change: "+0%", 
       trend: "up", 
-      color: "bg-gray-500" 
+      color: "bg-muted" 
     },
   ];
 
@@ -230,17 +230,17 @@ const Dashboard = () => {
                       <p className="text-2xl font-bold">{item.value}</p>
                     </div>
                     <div className={`w-12 h-12 ${item.color} rounded-lg flex items-center justify-center`}>
-                      <TrendingUp className="h-6 w-6 text-white" />
+                      <TrendingUp className="h-6 w-6 text-primary-foreground" />
                     </div>
                   </div>
                   <div className="flex items-center mt-4">
                     {item.trend === 'up' ? (
-                      <ArrowUp className="h-4 w-4 text-green-500 mr-1" />
+                      <ArrowUp className="h-4 w-4 text-primary mr-1" />
                     ) : (
-                      <ArrowDown className="h-4 w-4 text-red-500 mr-1" />
+                      <ArrowDown className="h-4 w-4 text-destructive mr-1" />
                     )}
                     <span className={`text-sm font-medium ${
-                      item.trend === 'up' ? 'text-green-500' : 'text-red-500'
+                      item.trend === 'up' ? 'text-primary' : 'text-destructive'
                     }`}>
                       {item.change}
                     </span>
@@ -292,7 +292,7 @@ const Dashboard = () => {
             <Card className="shadow-card">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <TrendingUp className="h-5 w-5 text-blue-500" />
+                  <TrendingUp className="h-5 w-5 text-primary" />
                   Projetos Recentes
                 </CardTitle>
               </CardHeader>
@@ -341,7 +341,7 @@ const Dashboard = () => {
             <Card className="shadow-card">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Clock className="h-5 w-5 text-green-500" />
+                  <Clock className="h-5 w-5 text-primary-glow" />
                   Pagamentos Recentes
                 </CardTitle>
               </CardHeader>
@@ -385,7 +385,7 @@ const Dashboard = () => {
             <Card className="shadow-card">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <TrendingUp className="h-5 w-5 text-purple-500" />
+                  <TrendingUp className="h-5 w-5 text-secondary" />
                   Ações Rápidas
                 </CardTitle>
               </CardHeader>
@@ -421,7 +421,7 @@ const Dashboard = () => {
             <Card className="shadow-card">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <AlertTriangle className="h-5 w-5 text-yellow-500" />
+                  <AlertTriangle className="h-5 w-5 text-accent" />
                   Informações da Organização
                 </CardTitle>
               </CardHeader>
