@@ -49,32 +49,29 @@ const SignUp = () => {
       const { error } = await signUp(data.email, data.password, data.fullName);
 
       if (error) {
-        setSignupError("Erro ao criar conta. Tente novamente mais tarde.");
-        return;
-      }
-
-      // Create user profile after signup
-      const { data: { user: newUser } } = await supabase.auth.getUser();
-      
-      if (newUser) {
-        const { error: profileError } = await supabase
-          .from('user_profiles')
-          .insert({
-            user_id: newUser.id,
-            nome: data.fullName,
-          });
-
-        if (profileError) {
-          console.error('Erro ao criar perfil:', profileError);
-          // Don't show error to user since account was created successfully
+        // Handle specific error cases
+        if (error.message?.includes('User already registered')) {
+          setSignupError("Este email já está cadastrado. Tente fazer login.");
+        } else if (error.message?.includes('Invalid email')) {
+          setSignupError("Email inválido. Verifique o formato do email.");
+        } else if (error.message?.includes('Password')) {
+          setSignupError("Senha deve ter pelo menos 6 caracteres.");
+        } else {
+          setSignupError("Erro ao criar conta. Tente novamente mais tarde.");
         }
+        return;
       }
 
       toast({
         title: "Sucesso",
-        description: "Conta criada com sucesso!",
+        description: "Conta criada com sucesso! Redirecionando...",
       });
-      navigate("/dashboard");
+      
+      // Navigate after a short delay to allow toast to show
+      setTimeout(() => {
+        navigate("/dashboard");
+      }, 1000);
+      
     } catch (error: any) {
       setSignupError("Erro ao criar conta. Tente novamente mais tarde.");
     }

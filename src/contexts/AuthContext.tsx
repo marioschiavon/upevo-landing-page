@@ -23,15 +23,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const { toast } = useToast();
 
   useEffect(() => {
-    console.log('Setting up auth state listener...');
-    
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        console.log('Auth state changed:', event, session);
         
         if (event === 'SIGNED_OUT') {
-          console.log('User signed out, clearing state...');
           setSession(null);
           setUser(null);
           setLoading(false);
@@ -45,12 +41,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             window.location.href = '/login';
           }, 100);
         } else if (event === 'SIGNED_IN') {
-          console.log('User signed in');
           setSession(session);
           setUser(session?.user ?? null);
           setLoading(false);
+          
+          // Create user profile when user signs in for the first time
+          if (session?.user) {
+            setTimeout(() => {
+              createUserProfile(session.user);
+            }, 0);
+          }
         } else if (event === 'TOKEN_REFRESHED') {
-          console.log('Token refreshed');
           setSession(session);
           setUser(session?.user ?? null);
           setLoading(false);
@@ -64,14 +65,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log('Initial session:', session);
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
     });
 
     return () => {
-      console.log('Unsubscribing from auth state changes');
       subscription.unsubscribe();
     };
   }, []);
@@ -88,9 +87,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (error && error.code !== '23505') { // Ignore duplicate key error
         console.error('Erro ao criar perfil do usuário:', error);
+        toast({
+          title: "Aviso",
+          description: "Perfil criado mas alguns dados podem estar incompletos",
+          variant: "destructive",
+        });
       }
     } catch (error) {
       console.error('Erro ao criar perfil do usuário:', error);
+      toast({
+        title: "Aviso", 
+        description: "Conta criada mas perfil pode estar incompleto",
+        variant: "destructive",
+      });
     }
   };
 
@@ -122,8 +131,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signOut = async () => {
     try {
-      console.log('Iniciando processo de logout...');
-      
       // Mostrar toast de loading
       toast({
         title: "Fazendo logout...",
@@ -134,7 +141,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const { error } = await supabase.auth.signOut();
       
       if (error) {
-        console.error('Erro no logout do Supabase:', error);
         toast({
           title: "Erro",
           description: "Erro ao fazer logout",
@@ -143,11 +149,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return;
       }
       
-      console.log('Logout do Supabase realizado com sucesso');
       // O resto será tratado pelo onAuthStateChange quando o evento SIGNED_OUT for disparado
       
     } catch (error) {
-      console.error('Erro no logout:', error);
       toast({
         title: "Erro",
         description: "Erro ao fazer logout",
