@@ -14,7 +14,9 @@ import {
   AlertTriangle,
   Loader2,
   Users,
-  Building2
+  Building2,
+  FolderOpen,
+  DollarSign
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
@@ -36,6 +38,13 @@ const Dashboard = () => {
   });
   const [projects, setProjects] = useState<any[]>([]);
   const [payments, setPayments] = useState<any[]>([]);
+  const [previousMonthData, setPreviousMonthData] = useState({
+    totalProjects: 0,
+    totalClients: 0,
+    totalReceived: 0,
+    totalPending: 0,
+    approvedBudgets: 0
+  });
 
   useEffect(() => {
     if (currentOrganization) {
@@ -51,10 +60,19 @@ const Dashboard = () => {
     try {
       setLoading(true);
       
+      // Get current month dates
+      const now = new Date();
+      const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      const currentMonthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+      
+      // Get previous month dates
+      const previousMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      const previousMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
+      
       // Fetch summary data
       const [projectsRes, clientsRes, paymentsRes, budgetsRes] = await Promise.all([
         supabase.from('projects').select('id, name, status, created_at').eq('organization_id', currentOrganization.id),
-        supabase.from('clients').select('id').eq('organization_id', currentOrganization.id),
+        supabase.from('clients').select('id, created_at').eq('organization_id', currentOrganization.id),
         supabase.from('payments').select('*').eq('organization_id', currentOrganization.id),
         supabase.from('budgets').select('*').eq('organization_id', currentOrganization.id).eq('status', 'aprovado')
       ]);
@@ -64,8 +82,22 @@ const Dashboard = () => {
       if (paymentsRes.error) throw paymentsRes.error;
       if (budgetsRes.error) throw budgetsRes.error;
 
+      // Current month calculations
       const totalReceived = paymentsRes.data?.filter(p => p.status === 'pago').reduce((sum, p) => sum + Number(p.value), 0) || 0;
       const totalPending = paymentsRes.data?.filter(p => p.status === 'pendente').reduce((sum, p) => sum + Number(p.value), 0) || 0;
+
+      // Previous month calculations
+      const prevProjects = projectsRes.data?.filter(p => new Date(p.created_at) <= previousMonthEnd).length || 0;
+      const prevClients = clientsRes.data?.filter(c => new Date(c.created_at) <= previousMonthEnd).length || 0;
+      const prevReceived = paymentsRes.data?.filter(p => 
+        p.status === 'pago' && 
+        new Date(p.paid_date || p.due_date) <= previousMonthEnd
+      ).reduce((sum, p) => sum + Number(p.value), 0) || 0;
+      const prevPending = paymentsRes.data?.filter(p => 
+        p.status === 'pendente' && 
+        new Date(p.due_date) <= previousMonthEnd
+      ).reduce((sum, p) => sum + Number(p.value), 0) || 0;
+      const prevBudgets = budgetsRes.data?.filter(b => new Date(b.created_at) <= previousMonthEnd).length || 0;
 
       setDashboardData({
         totalProjects: projectsRes.data?.length || 0,
@@ -73,6 +105,14 @@ const Dashboard = () => {
         totalReceived,
         totalPending,
         approvedBudgets: budgetsRes.data?.length || 0
+      });
+
+      setPreviousMonthData({
+        totalProjects: prevProjects,
+        totalClients: prevClients,
+        totalReceived: prevReceived,
+        totalPending: prevPending,
+        approvedBudgets: prevBudgets
       });
 
       setProjects(projectsRes.data || []);
@@ -96,41 +136,52 @@ const Dashboard = () => {
     }).format(value);
   };
 
+  const calculatePercentageChange = (current: number, previous: number) => {
+    if (previous === 0) return current > 0 ? "+100%" : "0%";
+    const change = ((current - previous) / previous) * 100;
+    const formattedChange = Math.abs(change).toFixed(1);
+    return change >= 0 ? `+${formattedChange}%` : `-${formattedChange}%`;
+  };
+
+  const getTrend = (current: number, previous: number) => {
+    return current >= previous ? "up" : "down";
+  };
+
   const summaryData = [
     { 
       title: "Total de Projetos", 
       value: dashboardData.totalProjects.toString(), 
-      change: "+0%", 
-      trend: "up", 
-      color: "bg-primary" 
+      change: calculatePercentageChange(dashboardData.totalProjects, previousMonthData.totalProjects), 
+      trend: getTrend(dashboardData.totalProjects, previousMonthData.totalProjects), 
+      icon: FolderOpen
     },
     { 
       title: "Total de Clientes", 
       value: dashboardData.totalClients.toString(), 
-      change: "+0%", 
-      trend: "up", 
-      color: "bg-secondary" 
+      change: calculatePercentageChange(dashboardData.totalClients, previousMonthData.totalClients), 
+      trend: getTrend(dashboardData.totalClients, previousMonthData.totalClients), 
+      icon: Users
     },
     { 
       title: "Valor Pendente", 
       value: formatCurrency(dashboardData.totalPending), 
-      change: "+0%", 
-      trend: "up", 
-      color: "bg-accent" 
+      change: calculatePercentageChange(dashboardData.totalPending, previousMonthData.totalPending), 
+      trend: getTrend(dashboardData.totalPending, previousMonthData.totalPending), 
+      icon: Clock
     },
     { 
       title: "Valor Recebido", 
       value: formatCurrency(dashboardData.totalReceived), 
-      change: "+0%", 
-      trend: "up", 
-      color: "bg-primary-glow" 
+      change: calculatePercentageChange(dashboardData.totalReceived, previousMonthData.totalReceived), 
+      trend: getTrend(dashboardData.totalReceived, previousMonthData.totalReceived), 
+      icon: DollarSign
     },
     { 
       title: "Orçamentos Aprovados", 
       value: dashboardData.approvedBudgets.toString(), 
-      change: "+0%", 
-      trend: "up", 
-      color: "bg-muted" 
+      change: calculatePercentageChange(dashboardData.approvedBudgets, previousMonthData.approvedBudgets), 
+      trend: getTrend(dashboardData.approvedBudgets, previousMonthData.approvedBudgets), 
+      icon: CheckCircle
     },
   ];
 
@@ -221,34 +272,33 @@ const Dashboard = () => {
         <div className="p-8">
           {/* Summary Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
-            {summaryData.map((item, index) => (
-              <Card key={index} className="shadow-card">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">{item.title}</p>
-                      <p className="text-2xl font-bold">{item.value}</p>
+            {summaryData.map((item, index) => {
+              const IconComponent = item.icon;
+              return (
+                <Card key={index} className="shadow-card">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">{item.title}</CardTitle>
+                    <IconComponent className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{item.value}</div>
+                    <div className="flex items-center mt-2">
+                      {item.trend === 'up' ? (
+                        <ArrowUp className="h-4 w-4 text-green-600 mr-1" />
+                      ) : (
+                        <ArrowDown className="h-4 w-4 text-red-600 mr-1" />
+                      )}
+                      <span className={`text-sm font-medium ${
+                        item.trend === 'up' ? 'text-green-600' : 'text-red-600'
+                      }`}>
+                        {item.change}
+                      </span>
+                      <span className="text-xs text-muted-foreground ml-2">vs mês anterior</span>
                     </div>
-                    <div className={`w-12 h-12 ${item.color} rounded-lg flex items-center justify-center`}>
-                      <TrendingUp className="h-6 w-6 text-primary-foreground" />
-                    </div>
-                  </div>
-                  <div className="flex items-center mt-4">
-                    {item.trend === 'up' ? (
-                      <ArrowUp className="h-4 w-4 text-primary mr-1" />
-                    ) : (
-                      <ArrowDown className="h-4 w-4 text-destructive mr-1" />
-                    )}
-                    <span className={`text-sm font-medium ${
-                      item.trend === 'up' ? 'text-primary' : 'text-destructive'
-                    }`}>
-                      {item.change}
-                    </span>
-                    <span className="text-sm text-muted-foreground ml-2">vs mês anterior</span>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
 
           {/* Chart */}
