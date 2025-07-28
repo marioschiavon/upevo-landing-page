@@ -24,11 +24,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useOrganization } from "@/contexts/OrganizationContext";
 
+type TimeFilter = '30dias' | '6meses' | 'anoAtual';
+
 const Dashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { currentOrganization, loading: orgLoading } = useOrganization();
   const [loading, setLoading] = useState(true);
+  const [timeFilter, setTimeFilter] = useState<TimeFilter>('anoAtual');
   const [dashboardData, setDashboardData] = useState({
     totalProjects: 0,
     totalClients: 0,
@@ -185,34 +188,78 @@ const Dashboard = () => {
     },
   ];
 
-  // Generate chart data from last 6 months of payments
-  const generateChartData = () => {
-    const months = [];
+  // Generate chart data based on selected time filter
+  const generateChartData = (period: TimeFilter) => {
     const now = new Date();
-    
-    for (let i = 5; i >= 0; i--) {
-      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const monthName = date.toLocaleDateString('pt-BR', { month: 'short' });
-      
-      const monthPayments = payments.filter(payment => {
-        const paymentDate = new Date(payment.due_date);
-        return paymentDate.getMonth() === date.getMonth() && paymentDate.getFullYear() === date.getFullYear();
-      });
+    const data = [];
 
-      const valorRecebido = monthPayments.filter(p => p.status === 'pago').reduce((sum, p) => sum + Number(p.value), 0);
-      const valorVencer = monthPayments.filter(p => p.status === 'pendente').reduce((sum, p) => sum + Number(p.value), 0);
+    if (period === '30dias') {
+      // Generate daily data for last 30 days
+      for (let i = 29; i >= 0; i--) {
+        const date = new Date(now);
+        date.setDate(date.getDate() - i);
+        const dayLabel = date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+        
+        const dayPayments = payments.filter(payment => {
+          const paymentDate = new Date(payment.due_date);
+          return paymentDate.toDateString() === date.toDateString();
+        });
 
-      months.push({
-        month: monthName,
-        valorRecebido,
-        valorVencer
-      });
+        const valorRecebido = dayPayments.filter(p => p.status === 'pago').reduce((sum, p) => sum + Number(p.value), 0);
+        const valorVencer = dayPayments.filter(p => p.status === 'pendente').reduce((sum, p) => sum + Number(p.value), 0);
+
+        data.push({
+          month: dayLabel,
+          valorRecebido,
+          valorVencer
+        });
+      }
+    } else if (period === '6meses') {
+      // Generate monthly data for last 6 months
+      for (let i = 5; i >= 0; i--) {
+        const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const monthName = date.toLocaleDateString('pt-BR', { month: 'short' });
+        
+        const monthPayments = payments.filter(payment => {
+          const paymentDate = new Date(payment.due_date);
+          return paymentDate.getMonth() === date.getMonth() && paymentDate.getFullYear() === date.getFullYear();
+        });
+
+        const valorRecebido = monthPayments.filter(p => p.status === 'pago').reduce((sum, p) => sum + Number(p.value), 0);
+        const valorVencer = monthPayments.filter(p => p.status === 'pendente').reduce((sum, p) => sum + Number(p.value), 0);
+
+        data.push({
+          month: monthName,
+          valorRecebido,
+          valorVencer
+        });
+      }
+    } else {
+      // Generate monthly data for current year
+      for (let i = 0; i < 12; i++) {
+        const date = new Date(now.getFullYear(), i, 1);
+        const monthName = date.toLocaleDateString('pt-BR', { month: 'short' });
+        
+        const monthPayments = payments.filter(payment => {
+          const paymentDate = new Date(payment.due_date);
+          return paymentDate.getMonth() === i && paymentDate.getFullYear() === now.getFullYear();
+        });
+
+        const valorRecebido = monthPayments.filter(p => p.status === 'pago').reduce((sum, p) => sum + Number(p.value), 0);
+        const valorVencer = monthPayments.filter(p => p.status === 'pendente').reduce((sum, p) => sum + Number(p.value), 0);
+
+        data.push({
+          month: monthName,
+          valorRecebido,
+          valorVencer
+        });
+      }
     }
     
-    return months;
+    return data;
   };
 
-  const chartData = generateChartData();
+  const chartData = generateChartData(timeFilter);
 
   // Show loading while organization context is loading
   if (orgLoading || loading) {
@@ -307,9 +354,27 @@ const Dashboard = () => {
               <div className="flex items-center justify-between">
                 <CardTitle>Visão Geral Financeira</CardTitle>
                 <div className="flex gap-2">
-                  <Button variant="outline" size="sm">30 dias</Button>
-                  <Button variant="outline" size="sm">6 meses</Button>
-                  <Button variant="default" size="sm">Ano atual</Button>
+                  <Button 
+                    variant={timeFilter === '30dias' ? 'default' : 'outline'} 
+                    size="sm"
+                    onClick={() => setTimeFilter('30dias')}
+                  >
+                    30 dias
+                  </Button>
+                  <Button 
+                    variant={timeFilter === '6meses' ? 'default' : 'outline'} 
+                    size="sm"
+                    onClick={() => setTimeFilter('6meses')}
+                  >
+                    6 meses
+                  </Button>
+                  <Button 
+                    variant={timeFilter === 'anoAtual' ? 'default' : 'outline'} 
+                    size="sm"
+                    onClick={() => setTimeFilter('anoAtual')}
+                  >
+                    Ano atual
+                  </Button>
                 </div>
               </div>
             </CardHeader>
