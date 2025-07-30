@@ -7,11 +7,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { DeleteConfirmationDialog } from "@/components/ui/delete-confirmation-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Search, User, Calendar, AlertCircle } from "lucide-react";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { Plus, Search, Sparkles } from "lucide-react";
+import { TaskDetailModal } from "../TaskDetailModal";
+import { EnhancedTaskCard } from "../EnhancedTaskCard";
 import {
   DndContext,
   DragEndEvent,
@@ -48,74 +49,7 @@ interface Task {
   created_at: string;
 }
 
-// Componente para Task Card Arrastável
-const DraggableTaskCard = ({ task }: { task: Task }) => {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: task.id });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  };
-
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'alta':
-        return 'destructive';
-      case 'media':
-        return 'default';
-      case 'baixa':
-        return 'secondary';
-      default:
-        return 'default';
-    }
-  };
-
-  return (
-    <Card 
-      ref={setNodeRef} 
-      style={style} 
-      {...attributes} 
-      {...listeners}
-      className={`p-3 transition-shadow cursor-grab active:cursor-grabbing ${
-        task.status === 'em_andamento' ? 'border-l-4 border-l-primary' : 
-        task.status === 'concluida' ? 'border-l-4 border-l-green-500 opacity-75' : ''
-      } ${isDragging ? 'opacity-50 shadow-lg' : 'hover:shadow-md'}`}
-    >
-      <div className="space-y-2">
-        <div className="flex items-start justify-between">
-          <h4 className={`font-medium text-sm ${task.status === 'concluida' ? 'line-through' : ''}`}>
-            {task.title}
-          </h4>
-          <Badge variant={getPriorityColor(task.priority)} className="text-xs">
-            {task.priority}
-          </Badge>
-        </div>
-        
-        {task.description && (
-          <p className="text-xs text-muted-foreground line-clamp-2">
-            {task.description}
-          </p>
-        )}
-        
-        <div className="flex items-center justify-between">
-          {task.due_date && (
-            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-              <Calendar className="h-3 w-3" />
-              {format(new Date(task.due_date), 'dd/MM', { locale: ptBR })}
-            </div>
-          )}
-        </div>
-      </div>
-    </Card>
-  );
-};
+// Componente para Task Card Arrastável (substituído pelo EnhancedTaskCard)
 
 export const ProjectTasksTab = ({ project, onUpdate }: ProjectTasksTabProps) => {
   const { toast } = useToast();
@@ -127,6 +61,11 @@ export const ProjectTasksTab = ({ project, onUpdate }: ProjectTasksTabProps) => 
   const [priorityFilter, setPriorityFilter] = useState("all");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [taskDetailOpen, setTaskDetailOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [taskToDelete, setTaskToDelete] = useState<Task | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [newTask, setNewTask] = useState({
     title: "",
     description: "",
@@ -255,6 +194,48 @@ export const ProjectTasksTab = ({ project, onUpdate }: ProjectTasksTabProps) => 
     }
   };
 
+  const handleEditTask = (task: Task) => {
+    setSelectedTask(task);
+    setTaskDetailOpen(true);
+  };
+
+  const handleDeleteTask = (task: Task) => {
+    setTaskToDelete(task);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteTask = async () => {
+    if (!taskToDelete) return;
+    
+    setIsDeleting(true);
+    try {
+      const { error } = await supabase
+        .from('tasks')
+        .delete()
+        .eq('id', taskToDelete.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Tarefa excluída",
+        description: "A tarefa foi removida com sucesso",
+      });
+
+      setDeleteDialogOpen(false);
+      setTaskToDelete(null);
+      fetchTasks();
+      onUpdate();
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Não foi possível excluir a tarefa",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   const getPriorityColor = (priority: string) => {
     switch (priority) {
       case 'alta':
@@ -331,22 +312,34 @@ export const ProjectTasksTab = ({ project, onUpdate }: ProjectTasksTabProps) => 
     });
 
     return (
-      <Card className={`shadow-card ${isOver ? 'ring-2 ring-primary ring-opacity-50' : ''}`}>
+      <Card className={`shadow-card transition-all duration-200 ${
+        isOver ? 'ring-2 ring-primary/50 shadow-lg' : 'shadow-sm'
+      }`}>
         <CardHeader className="pb-3">
           <CardTitle className="text-sm flex items-center justify-between">
-            <span>{title}</span>
+            <div className="flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-primary" />
+              <span>{title}</span>
+            </div>
             {badge}
           </CardTitle>
         </CardHeader>
         <CardContent 
           ref={setNodeRef} 
-          className={`space-y-3 min-h-[200px] transition-colors ${
-            isOver ? 'bg-primary/5' : ''
+          className={`space-y-3 min-h-[300px] transition-all duration-200 ${
+            isOver ? 'bg-primary/5 border-primary/20' : ''
           }`}
         >
           <SortableContext items={tasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
             {children}
           </SortableContext>
+          
+          {tasks.length === 0 && (
+            <div className="text-center py-8 text-muted-foreground">
+              <Sparkles className="h-8 w-8 mx-auto mb-2 opacity-50" />
+              <p className="text-sm">Nenhuma tarefa</p>
+            </div>
+          )}
         </CardContent>
       </Card>
     );
@@ -357,7 +350,10 @@ export const ProjectTasksTab = ({ project, onUpdate }: ProjectTasksTabProps) => 
       {/* Cabeçalho com filtros */}
       <Card className="shadow-card">
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Tarefas do Projeto</CardTitle>
+          <div className="flex items-center gap-2">
+            <Sparkles className="h-5 w-5 text-primary" />
+            <CardTitle>Tarefas do Projeto</CardTitle>
+          </div>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
               <Button>
@@ -493,19 +489,17 @@ export const ProjectTasksTab = ({ project, onUpdate }: ProjectTasksTabProps) => 
             id="pendente"
             title="A Fazer"
             tasks={taskGroups.pendente}
-            badge={<Badge variant="outline">{taskGroups.pendente.length}</Badge>}
+            badge={<Badge variant="outline" className="bg-gray-100">{taskGroups.pendente.length}</Badge>}
           >
             {taskGroups.pendente.map((task) => (
-              <DraggableTaskCard key={task.id} task={task} />
+              <EnhancedTaskCard 
+                key={task.id} 
+                task={task} 
+                onEdit={handleEditTask}
+                onDelete={handleDeleteTask}
+              />
             ))}
             
-            {taskGroups.pendente.length === 0 && (
-              <div className="text-center py-8 text-muted-foreground">
-                <AlertCircle className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                <p className="text-sm">Nenhuma tarefa pendente</p>
-                <p className="text-xs mt-1">Arraste tarefas aqui</p>
-              </div>
-            )}
           </DroppableColumn>
 
           {/* Coluna Em Andamento */}
@@ -513,19 +507,16 @@ export const ProjectTasksTab = ({ project, onUpdate }: ProjectTasksTabProps) => 
             id="em_andamento"
             title="Em Progresso"
             tasks={taskGroups.em_andamento}
-            badge={<Badge variant="outline">{taskGroups.em_andamento.length}</Badge>}
+            badge={<Badge variant="outline" className="bg-blue-100">{taskGroups.em_andamento.length}</Badge>}
           >
             {taskGroups.em_andamento.map((task) => (
-              <DraggableTaskCard key={task.id} task={task} />
+              <EnhancedTaskCard 
+                key={task.id} 
+                task={task} 
+                onEdit={handleEditTask}
+                onDelete={handleDeleteTask}
+              />
             ))}
-            
-            {taskGroups.em_andamento.length === 0 && (
-              <div className="text-center py-8 text-muted-foreground">
-                <AlertCircle className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                <p className="text-sm">Nenhuma tarefa em andamento</p>
-                <p className="text-xs mt-1">Arraste tarefas aqui</p>
-              </div>
-            )}
           </DroppableColumn>
 
           {/* Coluna Concluída */}
@@ -533,31 +524,49 @@ export const ProjectTasksTab = ({ project, onUpdate }: ProjectTasksTabProps) => 
             id="concluida"
             title="Concluído"
             tasks={taskGroups.concluida}
-            badge={<Badge variant="outline">{taskGroups.concluida.length}</Badge>}
+            badge={<Badge variant="outline" className="bg-green-100">{taskGroups.concluida.length}</Badge>}
           >
             {taskGroups.concluida.map((task) => (
-              <DraggableTaskCard key={task.id} task={task} />
+              <EnhancedTaskCard 
+                key={task.id} 
+                task={task} 
+                onEdit={handleEditTask}
+                onDelete={handleDeleteTask}
+              />
             ))}
-            
-            {taskGroups.concluida.length === 0 && (
-              <div className="text-center py-8 text-muted-foreground">
-                <AlertCircle className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                <p className="text-sm">Nenhuma tarefa concluída</p>
-                <p className="text-xs mt-1">Arraste tarefas aqui</p>
-              </div>
-            )}
           </DroppableColumn>
         </div>
 
         {/* Drag Overlay */}
         <DragOverlay>
           {activeId ? (
-            <DraggableTaskCard 
+            <EnhancedTaskCard 
               task={tasks.find(t => t.id === activeId)!} 
+              onEdit={handleEditTask}
+              onDelete={handleDeleteTask}
             />
           ) : null}
         </DragOverlay>
       </DndContext>
+
+      {/* Modal de Detalhes da Tarefa */}
+      <TaskDetailModal
+        task={selectedTask}
+        open={taskDetailOpen}
+        onOpenChange={setTaskDetailOpen}
+        onUpdate={fetchTasks}
+      />
+
+      {/* Dialog de Confirmação de Exclusão */}
+      <DeleteConfirmationDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        onConfirm={confirmDeleteTask}
+        title="Excluir Tarefa"
+        description={`Tem certeza que deseja excluir a tarefa "${taskToDelete?.title}"? Esta ação não pode ser desfeita.`}
+        confirmText="Excluir"
+        loading={isDeleting}
+      />
     </div>
   );
 };
