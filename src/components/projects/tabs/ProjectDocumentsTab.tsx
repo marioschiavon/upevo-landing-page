@@ -55,29 +55,25 @@ export const ProjectDocumentsTab = ({ project, onUpdate }: ProjectDocumentsTabPr
 
   const fetchDocuments = async () => {
     try {
-      // Mock data for now - in real implementation, fetch from storage
-      const mockDocuments: Document[] = [
-        {
-          id: "1",
-          name: "Contrato de Desenvolvimento.pdf",
-          type: "contrato",
-          file_path: `/projects/${project.id}/contrato.pdf`,
-          file_size: 245760,
-          mime_type: "application/pdf",
-          uploaded_at: project.created_at,
-        },
-        {
-          id: "2", 
-          name: "Orçamento Detalhado.pdf",
-          type: "orcamento",
-          file_path: `/projects/${project.id}/orcamento.pdf`,
-          file_size: 189440,
-          mime_type: "application/pdf",
-          uploaded_at: project.created_at,
-        }
-      ];
+      const { data, error } = await supabase
+        .from('project_documents')
+        .select('*')
+        .eq('project_id', project.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      const documents: Document[] = data.map((doc) => ({
+        id: doc.id,
+        name: doc.name,
+        type: doc.type,
+        file_path: doc.file_path,
+        file_size: doc.file_size,
+        mime_type: doc.mime_type,
+        uploaded_at: doc.created_at,
+      }));
       
-      setDocuments(mockDocuments);
+      setDocuments(documents);
     } catch (error) {
       toast({
         title: "Erro",
@@ -102,8 +98,20 @@ export const ProjectDocumentsTab = ({ project, onUpdate }: ProjectDocumentsTabPr
     setUploading(true);
     
     try {
+      // Get current user
+      const { data: currentUser } = await supabase.auth.getUser();
+      if (!currentUser.user) throw new Error('Usuário não autenticado');
+
+      const { data: userData } = await supabase
+        .from('users')
+        .select('id')
+        .eq('auth_user_id', currentUser.user.id)
+        .single();
+
+      if (!userData) throw new Error('Dados do usuário não encontrados');
+
       const fileExt = newDocument.file.name.split('.').pop();
-      const fileName = `${project.id}/${Date.now()}.${fileExt}`;
+      const fileName = `projects/${project.id}/documents/${Date.now()}.${fileExt}`;
       
       const { error: uploadError } = await supabase.storage
         .from('upevolution')
@@ -111,18 +119,35 @@ export const ProjectDocumentsTab = ({ project, onUpdate }: ProjectDocumentsTabPr
 
       if (uploadError) throw uploadError;
 
-      // Create document record
-      const newDoc: Document = {
-        id: Date.now().toString(),
-        name: newDocument.name,
-        type: newDocument.type,
-        file_path: fileName,
-        file_size: newDocument.file.size,
-        mime_type: newDocument.file.type,
-        uploaded_at: new Date().toISOString(),
+      // Create document record in database
+      const { data: newDoc, error: insertError } = await supabase
+        .from('project_documents')
+        .insert({
+          project_id: project.id,
+          organization_id: project.organization_id,
+          name: newDocument.name,
+          type: newDocument.type,
+          file_path: fileName,
+          file_size: newDocument.file.size,
+          mime_type: newDocument.file.type,
+          uploaded_by: userData.id,
+        })
+        .select()
+        .single();
+
+      if (insertError) throw insertError;
+
+      const documentForState: Document = {
+        id: newDoc.id,
+        name: newDoc.name,
+        type: newDoc.type,
+        file_path: newDoc.file_path,
+        file_size: newDoc.file_size,
+        mime_type: newDoc.mime_type,
+        uploaded_at: newDoc.created_at,
       };
 
-      setDocuments(prev => [newDoc, ...prev]);
+      setDocuments(prev => [documentForState, ...prev]);
       
       toast({
         title: "Documento enviado",
@@ -135,6 +160,8 @@ export const ProjectDocumentsTab = ({ project, onUpdate }: ProjectDocumentsTabPr
         type: "contrato",
         file: null,
       });
+      
+      onUpdate();
     } catch (error) {
       toast({
         title: "Erro",
@@ -176,11 +203,20 @@ export const ProjectDocumentsTab = ({ project, onUpdate }: ProjectDocumentsTabPr
       const document = documents.find(d => d.id === documentId);
       if (!document) return;
 
-      const { error } = await supabase.storage
+      // Remove from storage
+      const { error: storageError } = await supabase.storage
         .from('upevolution')
         .remove([document.file_path]);
 
-      if (error) throw error;
+      if (storageError) throw storageError;
+
+      // Remove from database
+      const { error: dbError } = await supabase
+        .from('project_documents')
+        .delete()
+        .eq('id', documentId);
+
+      if (dbError) throw dbError;
 
       setDocuments(prev => prev.filter(d => d.id !== documentId));
       
@@ -188,10 +224,30 @@ export const ProjectDocumentsTab = ({ project, onUpdate }: ProjectDocumentsTabPr
         title: "Documento excluído",
         description: "O arquivo foi removido com sucesso",
       });
+      
+      onUpdate();
     } catch (error) {
       toast({
         title: "Erro",
         description: "Não foi possível excluir o arquivo",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleView = async (document: Document) => {
+    try {
+      const { data, error } = await supabase.storage
+        .from('upevolution')
+        .createSignedUrl(document.file_path, 60 * 60); // 1 hour expiration
+
+      if (error) throw error;
+
+      window.open(data.signedUrl, '_blank');
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Não foi possível visualizar o arquivo",
         variant: "destructive",
       });
     }
@@ -361,6 +417,7 @@ export const ProjectDocumentsTab = ({ project, onUpdate }: ProjectDocumentsTabPr
                     variant="ghost" 
                     size="sm" 
                     className="h-8 px-2"
+                    onClick={() => handleView(document)}
                   >
                     <Eye className="h-3 w-3" />
                   </Button>
