@@ -440,6 +440,36 @@ export type Database = {
           },
         ]
       }
+      task_checklists: {
+        Row: {
+          created_at: string
+          id: string
+          is_completed: boolean
+          order_index: number
+          task_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_completed?: boolean
+          order_index?: number
+          task_id: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_completed?: boolean
+          order_index?: number
+          task_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       task_logs: {
         Row: {
           created_at: string

@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Calendar, Clock, Flag, Trash2, Edit3, Save, X } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { TaskChecklistSection } from "./TaskChecklistSection";
 
 interface Task {
   id: string;
@@ -298,6 +299,11 @@ export const TaskDetailModal = ({ task, open, onOpenChange, onUpdate }: TaskDeta
                   )}
                 </div>
               )}
+            </div>
+
+            {/* Checklist Section */}
+            <div className="border-t pt-4">
+              <TaskChecklistSection taskId={task.id} />
             </div>
 
             {/* Informações de Criação */}

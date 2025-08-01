@@ -1,12 +1,14 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar, Flag, Clock, Edit3, Trash2, AlertTriangle } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { Calendar, Flag, Clock, Edit3, Trash2, AlertTriangle, CheckSquare } from "lucide-react";
 import { format, isPast, isToday } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Task {
   id: string;
@@ -27,6 +29,7 @@ interface EnhancedTaskCardProps {
 
 export const EnhancedTaskCard = ({ task, onEdit, onDelete }: EnhancedTaskCardProps) => {
   const [isHovered, setIsHovered] = useState(false);
+  const [checklistStats, setChecklistStats] = useState<{ total: number; completed: number } | null>(null);
   
   const {
     attributes,
@@ -41,6 +44,33 @@ export const EnhancedTaskCard = ({ task, onEdit, onDelete }: EnhancedTaskCardPro
     transform: CSS.Transform.toString(transform),
     transition,
   };
+
+  // Fetch checklist stats
+  useEffect(() => {
+    const fetchChecklistStats = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('task_checklists')
+          .select('is_completed')
+          .eq('task_id', task.id);
+
+        if (error) throw error;
+        
+        if (data && data.length > 0) {
+          const total = data.length;
+          const completed = data.filter(item => item.is_completed).length;
+          setChecklistStats({ total, completed });
+        } else {
+          setChecklistStats(null);
+        }
+      } catch (error) {
+        console.error('Error fetching checklist stats:', error);
+        setChecklistStats(null);
+      }
+    };
+
+    fetchChecklistStats();
+  }, [task.id]);
 
   const getPriorityConfig = (priority: string) => {
     switch (priority) {
@@ -196,6 +226,22 @@ export const EnhancedTaskCard = ({ task, onEdit, onDelete }: EnhancedTaskCardPro
           <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
             {task.description}
           </p>
+        )}
+
+        {/* Checklist Progress */}
+        {checklistStats && checklistStats.total > 0 && (
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <CheckSquare className="h-3 w-3 text-muted-foreground" />
+              <span className="text-xs text-muted-foreground">
+                {checklistStats.completed}/{checklistStats.total}
+              </span>
+            </div>
+            <Progress 
+              value={(checklistStats.completed / checklistStats.total) * 100} 
+              className="h-1.5"
+            />
+          </div>
         )}
         
         {/* Footer with due date and actions */}
