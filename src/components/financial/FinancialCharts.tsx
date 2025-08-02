@@ -40,7 +40,7 @@ export const FinancialCharts = ({ payments }: FinancialChartsProps) => {
   const pieData = Object.entries(statusCount).map(([status, count]) => ({
     name: status === 'pago' ? 'Pago' : status === 'pendente' ? 'Pendente' : 'Parcial',
     value: count,
-    color: status === 'pago' ? '#22c55e' : status === 'pendente' ? '#3b82f6' : '#f59e0b'
+    color: status === 'pago' ? '#22c55e' : status === 'pendente' ? '#94a3b8' : '#eab308'
   }));
 
   const formatCurrency = (value: number) => {

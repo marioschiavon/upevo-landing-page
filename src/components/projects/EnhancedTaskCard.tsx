@@ -114,8 +114,8 @@ export const EnhancedTaskCard = ({ task, onEdit, onDelete }: EnhancedTaskCardPro
         };
       case 'em_andamento':
         return {
-          style: 'bg-gradient-to-br from-blue-50 to-blue-100/50',
-          border: 'border-l-4 border-l-blue-500'
+          style: 'bg-gradient-to-br from-slate-50 to-slate-100/50',
+          border: 'border-l-4 border-l-slate-400'
         };
       case 'pendente':
         return {
@@ -289,7 +289,7 @@ export const EnhancedTaskCard = ({ task, onEdit, onDelete }: EnhancedTaskCardPro
           <div className={`
             w-2 h-2 rounded-full
             ${task.status === 'concluida' ? 'bg-green-500' : 
-              task.status === 'em_andamento' ? 'bg-blue-500' : 'bg-gray-300'}
+              task.status === 'em_andamento' ? 'bg-slate-400' : 'bg-gray-300'}
           `} />
         </div>
       </div>

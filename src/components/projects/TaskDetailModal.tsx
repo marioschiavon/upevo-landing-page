@@ -147,9 +147,9 @@ export const TaskDetailModal = ({ task, open, onOpenChange, onUpdate }: TaskDeta
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'concluida':
-        return 'secondary';
+        return 'success';
       case 'em_andamento':
-        return 'default';
+        return 'neutral';
       case 'pendente':
         return 'outline';
       default:

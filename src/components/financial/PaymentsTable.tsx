@@ -39,9 +39,9 @@ export const PaymentsTable = ({ payments, onUpdate }: PaymentsTableProps) => {
     }
 
     const variants = {
-      pendente: "secondary",
-      pago: "default",
-      parcial: "outline"
+      pendente: "neutral",
+      pago: "success",
+      parcial: "warning"
     } as const;
 
     const labels = {

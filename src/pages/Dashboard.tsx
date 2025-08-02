@@ -383,20 +383,20 @@ const Dashboard = () => {
                 <AreaChart data={chartData}>
                   <defs>
                     <linearGradient id="colorReceived" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#4ECDC4" stopOpacity={0.8}/>
-                      <stop offset="95%" stopColor="#4ECDC4" stopOpacity={0.1}/>
+                      <stop offset="5%" stopColor="#22c55e" stopOpacity={0.8}/>
+                      <stop offset="95%" stopColor="#22c55e" stopOpacity={0.1}/>
                     </linearGradient>
                     <linearGradient id="colorPending" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#F39C12" stopOpacity={0.8}/>
-                      <stop offset="95%" stopColor="#F39C12" stopOpacity={0.1}/>
+                      <stop offset="5%" stopColor="#94a3b8" stopOpacity={0.8}/>
+                      <stop offset="95%" stopColor="#94a3b8" stopOpacity={0.1}/>
                     </linearGradient>
                   </defs>
                   <XAxis dataKey="month" />
                   <YAxis />
                   <CartesianGrid strokeDasharray="3 3" />
                   <Tooltip />
-                  <Area type="monotone" dataKey="valorRecebido" stackId="1" stroke="#4ECDC4" fill="url(#colorReceived)" />
-                  <Area type="monotone" dataKey="valorVencer" stackId="1" stroke="#F39C12" fill="url(#colorPending)" />
+                  <Area type="monotone" dataKey="valorRecebido" stackId="1" stroke="#22c55e" fill="url(#colorReceived)" />
+                  <Area type="monotone" dataKey="valorVencer" stackId="1" stroke="#94a3b8" fill="url(#colorPending)" />
                 </AreaChart>
               </ResponsiveContainer>
             </CardContent>
@@ -423,8 +423,8 @@ const Dashboard = () => {
                       </div>
                       <div className="flex items-center gap-2">
                         <Badge variant={
-                          project.status === 'concluido' ? 'default' : 
-                          project.status === 'pausado' ? 'secondary' : 'outline'
+                          project.status === 'concluido' ? 'success' : 
+                          project.status === 'pausado' ? 'neutral' : 'outline'
                         }>
                           {project.status === 'em_andamento' ? 'Em Andamento' :
                            project.status === 'concluido' ? 'Concluído' :
@@ -472,7 +472,7 @@ const Dashboard = () => {
                       </div>
                       <div className="flex items-center gap-2">
                         <p className="font-medium">{formatCurrency(Number(payment.value))}</p>
-                        <Badge variant={payment.status === 'pago' ? 'default' : 'secondary'}>
+                        <Badge variant={payment.status === 'pago' ? 'success' : 'neutral'}>
                           {payment.status === 'pago' ? 'Pago' : 'Pendente'}
                         </Badge>
                       </div>

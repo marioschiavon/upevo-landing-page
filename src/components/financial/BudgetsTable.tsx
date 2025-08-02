@@ -35,8 +35,8 @@ export const BudgetsTable = ({ budgets, onUpdate, onNewBudget }: BudgetsTablePro
 
   const getStatusBadge = (status: string) => {
     const variants = {
-      aguardando: "secondary",
-      aprovado: "default",
+      aguardando: "neutral",
+      aprovado: "success",
       recusado: "destructive",
       cancelado: "outline"
     } as const;
