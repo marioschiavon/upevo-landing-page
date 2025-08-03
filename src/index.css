@@ -17,26 +17,26 @@ All colors MUST be HSL.
     --popover: 0 0% 100%;
     --popover-foreground: 210 11% 15%;
 
-    /* Warm Professional Brand Colors */
-    --primary: 12 88% 59%; /* #F76B56 - Coral Vibrante */
+    /* Soft Professional Blue Colors */
+    --primary: 210 40% 55%; /* #5B8DB8 - Azul Suave */
     --primary-foreground: 0 0% 100%;
-    --primary-glow: 12 88% 75%;
+    --primary-glow: 210 50% 70%;
 
-    --secondary: 25 95% 53%; /* #FF6B35 - Laranja Suave */
-    --secondary-foreground: 0 0% 100%;
+    --secondary: 200 35% 65%; /* #81B2CC - Azul Claro */
+    --secondary-foreground: 210 25% 15%;
 
-    --muted: 20 14% 96%; /* #F8F6F3 - Bege Claro */
-    --muted-foreground: 25 8% 45%;
+    --muted: 200 15% 96%; /* #F5F7F9 - Azul Muito Claro */
+    --muted-foreground: 210 12% 45%;
 
-    --accent: 45 93% 47%; /* #E6A649 - Dourado */
+    --accent: 215 30% 60%; /* #7A9BB8 - Azul Médio */
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 20 12% 89%; /* #E8E5E0 - Bege Suave */
-    --input: 20 12% 89%;
-    --ring: 12 88% 59%;
+    --border: 200 12% 89%; /* #E2E8ED - Azul Suave */
+    --input: 200 12% 89%;
+    --ring: 210 40% 55%;
 
     --radius: 0.5rem;
 
@@ -46,14 +46,14 @@ All colors MUST be HSL.
     --warning: 38 92% 50%; /* #eab308 - Amarelo para atenção */
 
     /* Custom Design Tokens */
-    --gradient-primary: linear-gradient(135deg, hsl(12 88% 59%), hsl(25 95% 53%));
-    --gradient-hero: linear-gradient(135deg, hsl(12 88% 59% / 0.1), hsl(25 95% 53% / 0.05));
-    --gradient-tech: linear-gradient(135deg, hsl(210 11% 15%), hsl(12 88% 59% / 0.8));
-    --gradient-cyber: linear-gradient(45deg, hsl(12 88% 59% / 0.2), hsl(45 93% 47% / 0.2), hsl(25 95% 53% / 0.2));
-    --shadow-elegant: 0 10px 30px -10px hsl(12 88% 59% / 0.2);
-    --shadow-card: 0 4px 20px -4px hsl(210 11% 15% / 0.1);
-    --shadow-glow: 0 0 40px hsl(12 88% 75% / 0.3);
-    --shadow-neon: 0 0 20px hsl(12 88% 59% / 0.5), 0 0 40px hsl(25 95% 53% / 0.3);
+    --gradient-primary: linear-gradient(135deg, hsl(210 40% 55%), hsl(200 35% 65%));
+    --gradient-hero: linear-gradient(135deg, hsl(210 40% 55% / 0.1), hsl(200 35% 65% / 0.05));
+    --gradient-tech: linear-gradient(135deg, hsl(210 11% 15%), hsl(210 40% 55% / 0.8));
+    --gradient-cyber: linear-gradient(45deg, hsl(210 40% 55% / 0.2), hsl(215 30% 60% / 0.2), hsl(200 35% 65% / 0.2));
+    --shadow-elegant: 0 10px 30px -10px hsl(210 40% 55% / 0.15);
+    --shadow-card: 0 4px 20px -4px hsl(210 11% 15% / 0.08);
+    --shadow-glow: 0 0 40px hsl(210 50% 70% / 0.2);
+    --shadow-neon: 0 0 20px hsl(210 40% 55% / 0.3), 0 0 40px hsl(200 35% 65% / 0.2);
     
     /* Animation variables */
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -86,16 +86,16 @@ All colors MUST be HSL.
     --popover: 15 12% 12%;
     --popover-foreground: 45 45% 90%;
 
-    --primary: 12 88% 65%; /* Coral mais claro no escuro */
+    --primary: 210 45% 65%; /* Azul mais claro no escuro */
     --primary-foreground: 15 8% 8%;
 
-    --secondary: 25 95% 58%; /* Laranja mais claro no escuro */
+    --secondary: 200 40% 70%; /* Azul claro mais suave no escuro */
     --secondary-foreground: 15 8% 8%;
 
     --muted: 15 12% 18%; /* #2E2620 - Bege Escuro */
     --muted-foreground: 25 15% 65%;
 
-    --accent: 45 93% 52%; /* Dourado mais claro no escuro */
+    --accent: 215 35% 65%; /* Azul médio mais claro no escuro */
     --accent-foreground: 15 8% 8%;
 
     --destructive: 0 84% 60%;
@@ -103,7 +103,7 @@ All colors MUST be HSL.
 
     --border: 15 12% 22%; /* #352E28 - Borda Escura */
     --input: 15 12% 22%;
-    --ring: 12 88% 65%;
+    --ring: 210 45% 65%;
 
     /* Status Colors - Dark Mode */
     --success: 142 69% 58%; /* Verde mais claro no escuro */

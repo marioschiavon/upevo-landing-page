@@ -12,6 +12,8 @@ import { GoogleCalendarButton } from '@/components/agenda/GoogleCalendarButton';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { Sidebar } from '@/components/shared/Sidebar';
+import { OrganizationDropdown } from '@/components/OrganizationDropdown';
 
 interface CalendarEvent {
   id: string;
@@ -95,6 +97,18 @@ export default function Agenda() {
     try {
       setLoading(true);
       
+      // Get the user record from our users table
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('id')
+        .eq('auth_user_id', user.id)
+        .single();
+
+      if (userError || !userData) {
+        toast.error('Erro ao buscar dados do usuário');
+        return;
+      }
+      
       const eventPayload = {
         organization_id: currentOrganization.id,
         title: eventData.title,
@@ -102,7 +116,7 @@ export default function Agenda() {
         start_time: eventData.start_time,
         end_time: eventData.end_time,
         origin: 'internal' as const,
-        created_by: user.id,
+        created_by: userData.id,
       };
 
       if (selectedEvent) {
@@ -158,93 +172,110 @@ export default function Agenda() {
     }
   };
 
-  if (!currentOrganization) {
-    return (
-      <div className="container mx-auto p-6">
-        <Card className="p-8 text-center">
-          <CalendarIcon className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-          <h3 className="text-lg font-medium mb-2">Selecione uma organização</h3>
-          <p className="text-muted-foreground">
-            Para acessar a agenda, você precisa selecionar uma organização primeiro.
-          </p>
-        </Card>
-      </div>
-    );
-  }
-
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold">Agenda</h1>
-          <p className="text-muted-foreground">
-            Gerencie seus eventos e compromissos
-          </p>
+    <div className="min-h-screen bg-background flex">
+      <Sidebar activeItem="agenda" />
+      
+      <main className="flex-1 overflow-auto">
+        {/* Header */}
+        <div className="border-b border-border bg-background">
+          <div className="flex h-16 items-center justify-between px-6">
+            <div className="flex items-center space-x-4">
+              <h1 className="text-2xl font-semibold">Agenda</h1>
+            </div>
+            
+            <div className="flex items-center space-x-4">
+              <OrganizationDropdown />
+            </div>
+          </div>
         </div>
-        
-        <div className="flex items-center gap-2">
-          <GoogleCalendarButton
-            isConnected={isGoogleConnected}
-            onConnectionChange={setIsGoogleConnected}
-          />
-          
-          <Button
-            onClick={() => {
-              setSelectedEvent(null);
-              setSelectedDate(null);
-              setIsModalOpen(true);
-            }}
-          >
-            <CalendarPlus className="h-4 w-4 mr-2" />
-            Novo Evento
-          </Button>
-        </div>
-      </div>
 
-      {/* Calendar */}
-      <Card className="p-6">
-        <FullCalendar
-          plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
-          initialView="dayGridMonth"
-          headerToolbar={{
-            left: 'prev,next today',
-            center: 'title',
-            right: 'dayGridMonth,timeGridWeek,timeGridDay'
-          }}
-          events={events}
-          dateClick={handleDateClick}
-          eventClick={handleEventClick}
-          selectable={true}
-          selectMirror={true}
-          dayMaxEvents={true}
-          weekends={true}
-          height="auto"
-          locale="pt-br"
-          buttonText={{
-            today: 'Hoje',
-            month: 'Mês',
-            week: 'Semana',
-            day: 'Dia'
-          }}
-          eventDisplay="block"
-          eventBackgroundColor="hsl(var(--primary))"
-          eventBorderColor="hsl(var(--primary))"
-          eventTextColor="hsl(var(--primary-foreground))"
-        />
-      </Card>
+        {/* Content */}
+        {!currentOrganization ? (
+          <div className="p-6">
+            <Card className="p-8 text-center">
+              <CalendarIcon className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+              <h3 className="text-lg font-medium mb-2">Selecione uma organização</h3>
+              <p className="text-muted-foreground">
+                Para acessar a agenda, você precisa selecionar uma organização primeiro.
+              </p>
+            </Card>
+          </div>
+        ) : (
+          <div className="p-6 space-y-6">
+            {/* Action Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div>
+                <p className="text-muted-foreground">
+                  Gerencie seus eventos e compromissos
+                </p>
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <GoogleCalendarButton
+                  isConnected={isGoogleConnected}
+                  onConnectionChange={setIsGoogleConnected}
+                />
+                
+                <Button
+                  onClick={() => {
+                    setSelectedEvent(null);
+                    setSelectedDate(null);
+                    setIsModalOpen(true);
+                  }}
+                >
+                  <CalendarPlus className="h-4 w-4 mr-2" />
+                  Novo Evento
+                </Button>
+              </div>
+            </div>
 
-      {/* Event Modal */}
-      <EventModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        event={selectedEvent}
-        selectedDate={selectedDate}
-        onSave={handleEventSave}
-        onDelete={handleEventDelete}
-        loading={loading}
-        isGoogleConnected={isGoogleConnected}
-      />
+            {/* Calendar */}
+            <Card className="p-6">
+              <FullCalendar
+                plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+                initialView="dayGridMonth"
+                headerToolbar={{
+                  left: 'prev,next today',
+                  center: 'title',
+                  right: 'dayGridMonth,timeGridWeek,timeGridDay'
+                }}
+                events={events}
+                dateClick={handleDateClick}
+                eventClick={handleEventClick}
+                selectable={true}
+                selectMirror={true}
+                dayMaxEvents={true}
+                weekends={true}
+                height="auto"
+                locale="pt-br"
+                buttonText={{
+                  today: 'Hoje',
+                  month: 'Mês',
+                  week: 'Semana',
+                  day: 'Dia'
+                }}
+                eventDisplay="block"
+                eventBackgroundColor="hsl(var(--primary))"
+                eventBorderColor="hsl(var(--primary))"
+                eventTextColor="hsl(var(--primary-foreground))"
+              />
+            </Card>
+
+            {/* Event Modal */}
+            <EventModal
+              isOpen={isModalOpen}
+              onClose={() => setIsModalOpen(false)}
+              event={selectedEvent}
+              selectedDate={selectedDate}
+              onSave={handleEventSave}
+              onDelete={handleEventDelete}
+              loading={loading}
+              isGoogleConnected={isGoogleConnected}
+            />
+          </div>
+        )}
+      </main>
     </div>
   );
 }
