@@ -12,9 +12,12 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
-import { CalendarDays, Clock, Trash2, ExternalLink } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { CalendarDays, Clock, Trash2, ExternalLink, User, Briefcase } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { supabase } from '@/integrations/supabase/client';
+import { useOrganization } from '@/contexts/OrganizationContext';
 
 interface EventModalProps {
   isOpen: boolean;
@@ -37,13 +40,47 @@ export function EventModal({
   loading = false,
   isGoogleConnected = false,
 }: EventModalProps) {
+  const { currentOrganization } = useOrganization();
+  const [clients, setClients] = useState<any[]>([]);
+  const [projects, setProjects] = useState<any[]>([]);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
     start_time: '',
     end_time: '',
+    client_id: '',
+    project_id: '',
     syncWithGoogle: false,
   });
+
+  useEffect(() => {
+    if (currentOrganization && isOpen) {
+      fetchClientsAndProjects();
+    }
+  }, [currentOrganization, isOpen]);
+
+  const fetchClientsAndProjects = async () => {
+    if (!currentOrganization) return;
+
+    try {
+      const [clientsResponse, projectsResponse] = await Promise.all([
+        supabase
+          .from('clients')
+          .select('id, name')
+          .eq('organization_id', currentOrganization.id)
+          .eq('is_active', true),
+        supabase
+          .from('projects')
+          .select('id, name, clients(name)')
+          .eq('organization_id', currentOrganization.id)
+      ]);
+
+      if (clientsResponse.data) setClients(clientsResponse.data);
+      if (projectsResponse.data) setProjects(projectsResponse.data);
+    } catch (error) {
+      console.error('Error fetching clients and projects:', error);
+    }
+  };
 
   useEffect(() => {
     if (event) {
@@ -56,6 +93,8 @@ export function EventModal({
         description: event.extendedProps?.description || '',
         start_time: format(startDate, "yyyy-MM-dd'T'HH:mm"),
         end_time: format(endDate, "yyyy-MM-dd'T'HH:mm"),
+        client_id: '',
+        project_id: '',
         syncWithGoogle: event.extendedProps?.origin === 'google',
       });
     } else if (selectedDate) {
@@ -71,6 +110,8 @@ export function EventModal({
         description: '',
         start_time: format(startTime, "yyyy-MM-dd'T'HH:mm"),
         end_time: format(endTime, "yyyy-MM-dd'T'HH:mm"),
+        client_id: '',
+        project_id: '',
         syncWithGoogle: false,
       });
     } else {
@@ -83,6 +124,8 @@ export function EventModal({
         description: '',
         start_time: format(now, "yyyy-MM-dd'T'HH:mm"),
         end_time: format(oneHourLater, "yyyy-MM-dd'T'HH:mm"),
+        client_id: '',
+        project_id: '',
         syncWithGoogle: false,
       });
     }
@@ -162,6 +205,56 @@ export function EventModal({
                 onChange={(e) => setFormData({ ...formData, end_time: e.target.value })}
                 required
               />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="client" className="flex items-center gap-2">
+                <User className="h-4 w-4" />
+                Cliente
+              </Label>
+              <Select
+                value={formData.client_id}
+                onValueChange={(value) => setFormData({ ...formData, client_id: value, project_id: '' })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecionar cliente" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Nenhum cliente</SelectItem>
+                  {clients.map((client) => (
+                    <SelectItem key={client.id} value={client.id}>
+                      {client.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="project" className="flex items-center gap-2">
+                <Briefcase className="h-4 w-4" />
+                Projeto
+              </Label>
+              <Select
+                value={formData.project_id}
+                onValueChange={(value) => setFormData({ ...formData, project_id: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecionar projeto" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Nenhum projeto</SelectItem>
+                  {projects
+                    .filter(project => !formData.client_id || project.clients?.id === formData.client_id)
+                    .map((project) => (
+                      <SelectItem key={project.id} value={project.id}>
+                        {project.name}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 

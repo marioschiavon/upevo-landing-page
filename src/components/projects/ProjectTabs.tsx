@@ -3,7 +3,8 @@ import { ProjectDataTab } from "./tabs/ProjectDataTab";
 import { ProjectTasksTab } from "./tabs/ProjectTasksTab";
 import { ProjectFinancialTab } from "./tabs/ProjectFinancialTab";
 import { ProjectDocumentsTab } from "./tabs/ProjectDocumentsTab";
-import { FileText, CheckSquare, DollarSign, FolderOpen } from "lucide-react";
+import { TimeTracker } from "./TimeTracker";
+import { FileText, CheckSquare, DollarSign, FolderOpen, Clock } from "lucide-react";
 
 interface ProjectTabsProps {
   project: any;
@@ -13,7 +14,7 @@ interface ProjectTabsProps {
 export const ProjectTabs = ({ project, onUpdate }: ProjectTabsProps) => {
   return (
     <Tabs defaultValue="data" className="w-full">
-      <TabsList className="grid w-full grid-cols-4 h-12">
+      <TabsList className="grid w-full grid-cols-5 h-12">
         <TabsTrigger value="data" className="flex items-center gap-2">
           <FileText className="h-4 w-4" />
           <span className="hidden sm:inline">Dados</span>
@@ -21,6 +22,10 @@ export const ProjectTabs = ({ project, onUpdate }: ProjectTabsProps) => {
         <TabsTrigger value="tasks" className="flex items-center gap-2">
           <CheckSquare className="h-4 w-4" />
           <span className="hidden sm:inline">Tarefas</span>
+        </TabsTrigger>
+        <TabsTrigger value="time" className="flex items-center gap-2">
+          <Clock className="h-4 w-4" />
+          <span className="hidden sm:inline">Tempo</span>
         </TabsTrigger>
         <TabsTrigger value="financial" className="flex items-center gap-2">
           <DollarSign className="h-4 w-4" />
@@ -39,6 +44,10 @@ export const ProjectTabs = ({ project, onUpdate }: ProjectTabsProps) => {
         
         <TabsContent value="tasks">
           <ProjectTasksTab project={project} onUpdate={onUpdate} />
+        </TabsContent>
+        
+        <TabsContent value="time">
+          <TimeTracker projectId={project.id} projectName={project.name} />
         </TabsContent>
         
         <TabsContent value="financial">

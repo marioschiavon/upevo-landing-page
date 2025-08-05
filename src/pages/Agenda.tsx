@@ -206,6 +206,7 @@ export default function Agenda() {
             {/* Action Header */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
+                <h2 className="text-lg font-semibold">Agenda de {currentOrganization.name}</h2>
                 <p className="text-muted-foreground">
                   Gerencie seus eventos e compromissos
                 </p>
@@ -223,6 +224,7 @@ export default function Agenda() {
                     setSelectedDate(null);
                     setIsModalOpen(true);
                   }}
+                  className="bg-primary hover:bg-primary/90"
                 >
                   <CalendarPlus className="h-4 w-4 mr-2" />
                   Novo Evento
