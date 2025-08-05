@@ -2,16 +2,13 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Play, Square, Clock, Calendar, DollarSign } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { formatDistanceToNow, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { StopTimerModal } from './StopTimerModal';
 
 interface TimeLog {
   id: string;
@@ -35,8 +32,6 @@ export function TimeTracker({ projectId, projectName }: TimeTrackerProps) {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [loading, setLoading] = useState(false);
   const [showStopModal, setShowStopModal] = useState(false);
-  const [description, setDescription] = useState('');
-  const [sendToGoogle, setSendToGoogle] = useState(false);
   const [totalHours, setTotalHours] = useState(0);
 
   useEffect(() => {
@@ -117,7 +112,7 @@ export function TimeTracker({ projectId, projectName }: TimeTrackerProps) {
     }
   };
 
-  const stopTimer = async () => {
+  const stopTimer = async (description: string, sendToGoogle: boolean) => {
     if (!activeLog) return;
 
     try {
@@ -140,8 +135,6 @@ export function TimeTracker({ projectId, projectName }: TimeTrackerProps) {
       }
 
       setActiveLog(null);
-      setDescription('');
-      setSendToGoogle(false);
       setShowStopModal(false);
       fetchTimeLogs();
       toast.success('Cronômetro parado e log salvo');
@@ -290,50 +283,14 @@ export function TimeTracker({ projectId, projectName }: TimeTrackerProps) {
       </Card>
 
       {/* Stop Timer Modal */}
-      <Dialog open={showStopModal} onOpenChange={setShowStopModal}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Parar Cronômetro</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="description">Descrição da sessão (opcional)</Label>
-              <Textarea
-                id="description"
-                placeholder="Descreva o que foi realizado nesta sessão..."
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                className="mt-1"
-              />
-            </div>
-            
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="google-calendar"
-                checked={sendToGoogle}
-                onCheckedChange={(checked) => setSendToGoogle(checked === true)}
-              />
-              <Label htmlFor="google-calendar">
-                Enviar para Google Calendar
-              </Label>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setShowStopModal(false)}
-            >
-              Cancelar
-            </Button>
-            <Button
-              onClick={stopTimer}
-              disabled={loading}
-            >
-              Parar e Salvar
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <StopTimerModal
+        isOpen={showStopModal}
+        onClose={() => setShowStopModal(false)}
+        onConfirmStop={stopTimer}
+        loading={loading}
+        activeLog={activeLog}
+        isGoogleConnected={false}
+      />
     </div>
   );
 }
