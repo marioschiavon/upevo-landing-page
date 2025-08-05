@@ -79,11 +79,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const { error } = await supabase
         .from('users')
-        .insert({
+        .upsert({
           auth_user_id: user.id,
           name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Usuário',
           email: user.email || '',
-        });
+        }, { onConflict: 'email' });
 
       if (error && error.code !== '23505') { // Ignore duplicate key error
         console.error('Erro ao criar perfil do usuário:', error);
