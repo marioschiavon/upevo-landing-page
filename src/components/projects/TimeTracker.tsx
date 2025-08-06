@@ -18,6 +18,7 @@ interface TimeLog {
   description: string | null;
   billable: boolean;
   created_at: string;
+  google_calendar_event_id: string | null;
 }
 
 interface TimeTrackerProps {
@@ -33,9 +34,11 @@ export function TimeTracker({ projectId, projectName }: TimeTrackerProps) {
   const [loading, setLoading] = useState(false);
   const [showStopModal, setShowStopModal] = useState(false);
   const [totalHours, setTotalHours] = useState(0);
+  const [isGoogleConnected, setIsGoogleConnected] = useState(false);
 
   useEffect(() => {
     fetchTimeLogs();
+    checkGoogleConnection();
     
     // Update current time every second for the timer display
     const interval = setInterval(() => {
@@ -44,6 +47,17 @@ export function TimeTracker({ projectId, projectName }: TimeTrackerProps) {
 
     return () => clearInterval(interval);
   }, [projectId]);
+
+  const checkGoogleConnection = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke('google-calendar-auth/status');
+      if (!error && data) {
+        setIsGoogleConnected(data.isConnected);
+      }
+    } catch (error) {
+      console.log('Error checking Google connection:', error);
+    }
+  };
 
   const fetchTimeLogs = async () => {
     try {
@@ -90,12 +104,37 @@ export function TimeTracker({ projectId, projectName }: TimeTrackerProps) {
         return;
       }
 
+      const startTime = new Date();
+      const endTime = new Date(startTime.getTime() + 2 * 60 * 60 * 1000); // Default 2 hours
+
+      // Try to create Google Calendar event first
+      let googleEventId = null;
+      try {
+        const { data: googleData, error: googleError } = await supabase.functions.invoke('google-calendar-events', {
+          body: {
+            action: 'create',
+            title: `Sessão de Trabalho - ${projectName}`,
+            description: `Tempo de trabalho no projeto ${projectName}`,
+            startTime: startTime.toISOString(),
+            endTime: endTime.toISOString(),
+          },
+        });
+
+        if (!googleError && googleData?.googleEventId) {
+          googleEventId = googleData.googleEventId;
+          toast.success('Evento criado no Google Calendar!');
+        }
+      } catch (googleError) {
+        console.log('Google Calendar not connected or error creating event:', googleError);
+      }
+
       const { data, error } = await supabase
         .from('time_logs')
         .insert({
           project_id: projectId,
           user_id: userData.id,
-          start_time: new Date().toISOString(),
+          start_time: startTime.toISOString(),
+          google_calendar_event_id: googleEventId,
         })
         .select()
         .single();
@@ -119,6 +158,27 @@ export function TimeTracker({ projectId, projectName }: TimeTrackerProps) {
       setLoading(true);
 
       const endTime = new Date().toISOString();
+      
+      // Update Google Calendar event if it exists and user wants to sync
+      if (activeLog.google_calendar_event_id && sendToGoogle) {
+        try {
+          await supabase.functions.invoke('google-calendar-events', {
+            body: {
+              action: 'update',
+              googleEventId: activeLog.google_calendar_event_id,
+              title: `Sessão de Trabalho - ${projectName}`,
+              description: description || `Tempo de trabalho no projeto ${projectName}`,
+              startTime: activeLog.start_time,
+              endTime: endTime,
+            },
+          });
+          toast.success('Evento atualizado no Google Calendar!');
+        } catch (googleError) {
+          console.error('Error updating Google Calendar event:', googleError);
+          toast.error('Erro ao atualizar Google Calendar');
+        }
+      }
+
       const { error } = await supabase
         .from('time_logs')
         .update({ 
@@ -128,11 +188,6 @@ export function TimeTracker({ projectId, projectName }: TimeTrackerProps) {
         .eq('id', activeLog.id);
 
       if (error) throw error;
-
-      // TODO: Implement Google Calendar integration if sendToGoogle is true
-      if (sendToGoogle) {
-        toast.info('Integração com Google Calendar em desenvolvimento');
-      }
 
       setActiveLog(null);
       setShowStopModal(false);
@@ -289,7 +344,7 @@ export function TimeTracker({ projectId, projectName }: TimeTrackerProps) {
         onConfirmStop={stopTimer}
         loading={loading}
         activeLog={activeLog}
-        isGoogleConnected={false}
+        isGoogleConnected={isGoogleConnected}
       />
     </div>
   );

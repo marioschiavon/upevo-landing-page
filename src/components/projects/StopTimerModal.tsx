@@ -16,6 +16,7 @@ interface TimeLog {
   description: string | null;
   billable: boolean;
   created_at: string;
+  google_calendar_event_id: string | null;
 }
 
 interface StopTimerModalProps {
@@ -83,7 +84,7 @@ export function StopTimerModal({
             />
           </div>
           
-          {isGoogleConnected && (
+          {isGoogleConnected && activeLog?.google_calendar_event_id && (
             <div className="flex items-center space-x-2">
               <Checkbox
                 id="google-calendar"
@@ -91,7 +92,7 @@ export function StopTimerModal({
                 onCheckedChange={(checked) => setSendToGoogle(checked === true)}
               />
               <Label htmlFor="google-calendar" className="text-sm">
-                Enviar para Google Calendar
+                Atualizar evento no Google Calendar
               </Label>
             </div>
           )}
