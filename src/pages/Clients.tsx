@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { OrganizationDropdown } from "@/components/OrganizationDropdown";
-import { Sidebar } from "@/components/shared/Sidebar";
+
 import { ClientsFilters } from "@/components/clients/ClientsFilters";
 import { ClientsTable } from "@/components/clients/ClientsTable";
 import { ClientsEmptyState } from "@/components/clients/ClientsEmptyState";
@@ -80,7 +80,7 @@ const Clients = () => {
   if (!currentOrganization) {
     return (
       <div className="min-h-screen bg-background flex">
-        <Sidebar activeItem="clients" />
+        
         <main className="flex-1 overflow-auto">
           <header className="bg-card border-b shadow-sm p-4">
             <div className="flex items-center justify-between">
@@ -98,8 +98,6 @@ const Clients = () => {
 
   return (
     <div className="min-h-screen bg-background flex">
-      <Sidebar activeItem="clients" />
-
       {/* Main Content */}
       <main className="flex-1 overflow-auto">
         {/* Header com dropdown de organização */}

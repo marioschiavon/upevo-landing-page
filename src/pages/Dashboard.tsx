@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { OrganizationDropdown } from "@/components/OrganizationDropdown";
-import { Sidebar } from "@/components/shared/Sidebar";
+
 import { 
   ArrowUp,
   ArrowDown,
@@ -299,8 +299,6 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-background flex">
-      <Sidebar activeItem="dashboard" />
-
       {/* Main Content */}
       <main className="flex-1 overflow-auto">
         {/* Header com dropdown de organização */}

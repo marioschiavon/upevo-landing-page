@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Sidebar } from "@/components/shared/Sidebar";
+
 import { ProjectHeader } from "@/components/projects/ProjectHeader";
 import { ProjectTabs } from "@/components/projects/ProjectTabs";
 import { OrganizationDropdown } from "@/components/OrganizationDropdown";
@@ -84,8 +84,6 @@ const ProjectDetails = () => {
 
   return (
     <div className="min-h-screen bg-background flex">
-      <Sidebar activeItem="projects" />
-      
       <main className="flex-1 overflow-auto">
         <header className="bg-card border-b shadow-sm p-4">
           <div className="flex items-center justify-between">

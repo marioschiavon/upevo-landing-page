@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Sidebar } from "@/components/shared/Sidebar";
+
 import { OrganizationDropdown } from "@/components/OrganizationDropdown";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -165,7 +165,7 @@ const Financial = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex">
-        <Sidebar activeItem="financial" />
+        
         <main className="flex-1 flex items-center justify-center">
           <Loader2 className="h-8 w-8 animate-spin" />
         </main>
@@ -175,8 +175,6 @@ const Financial = () => {
 
   return (
     <div className="min-h-screen bg-background flex">
-      <Sidebar activeItem="financial" />
-      
       <main className="flex-1 overflow-auto">
         <header className="bg-card border-b shadow-sm p-4">
           <div className="flex items-center justify-between">

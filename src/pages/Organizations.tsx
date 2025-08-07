@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Sidebar } from "@/components/shared/Sidebar";
+
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -96,7 +96,7 @@ const Organizations = () => {
 
   return (
     <div className="min-h-screen bg-background flex">
-      <Sidebar activeItem="organizations" />
+      
 
       {/* Main Content */}
       <main className="flex-1 overflow-auto">

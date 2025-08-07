@@ -354,16 +354,6 @@ const ClientDetails = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex">
-        <aside className="w-64 bg-card border-r shadow-card">
-          <div className="p-6">
-            <img 
-              src="/lovable-uploads/e20659b7-17a3-4fba-a781-da7aeb501e68.png" 
-              alt="Upevolution Logo" 
-              className="h-8"
-            />
-          </div>
-        </aside>
-        <main className="flex-1 overflow-auto">
           <div className="p-8">
             <Skeleton className="h-8 w-48 mb-4" />
             <Skeleton className="h-12 w-96 mb-8" />
@@ -378,7 +368,6 @@ const ClientDetails = () => {
               </div>
             </div>
           </div>
-        </main>
       </div>
     );
   }
@@ -399,38 +388,6 @@ const ClientDetails = () => {
 
   return (
     <div className="min-h-screen bg-background flex">
-      {/* Sidebar */}
-      <aside className="w-64 bg-card border-r shadow-card">
-        <div className="p-6">
-          <img 
-            src="/lovable-uploads/e20659b7-17a3-4fba-a781-da7aeb501e68.png" 
-            alt="Upevolution Logo" 
-            className="h-8"
-          />
-        </div>
-        
-        <nav className="px-4 space-y-2">
-          {sidebarItems.map((item) => (
-            <button
-              key={item.label}
-              onClick={() => item.path && navigate(item.path)}
-              className={`w-full flex items-center gap-3 px-4 py-3 text-left rounded-lg transition-colors text-muted-foreground hover:bg-muted hover:text-foreground`}
-            >
-              <item.icon className="h-5 w-5" />
-              <span className="font-medium">{item.label}</span>
-            </button>
-          ))}
-          
-          <button
-            onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-4 py-3 text-left rounded-lg transition-colors text-muted-foreground hover:bg-muted hover:text-foreground mt-8"
-          >
-            <LogOut className="h-5 w-5" />
-            <span className="font-medium">Logout</span>
-          </button>
-        </nav>
-      </aside>
-
       {/* Main Content */}
       <main className="flex-1 overflow-auto">
         <div className="p-8">

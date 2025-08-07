@@ -174,18 +174,13 @@ export default function Agenda() {
 
   return (
     <div className="min-h-screen bg-background flex">
-      <Sidebar activeItem="agenda" />
+      
       
       <main className="flex-1 overflow-auto">
-        {/* Header */}
         <div className="border-b border-border bg-background">
           <div className="flex h-16 items-center justify-between px-6">
             <div className="flex items-center space-x-4">
               <h1 className="text-2xl font-semibold">Agenda</h1>
-            </div>
-            
-            <div className="flex items-center space-x-4">
-              <OrganizationDropdown />
             </div>
           </div>
         </div>
