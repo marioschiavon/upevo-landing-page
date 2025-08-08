@@ -85,11 +85,7 @@ const Dashboard = () => {
             duration_minutes,
             start_time,
             project_id,
-            projects!time_logs_project_id_fkey(
-              organization_id,
-              name
-            ),
-            users!time_logs_user_id_fkey(name)
+            user_id
           `)
           .not('end_time', 'is', null)
           .not('duration_minutes', 'is', null)
@@ -101,13 +97,36 @@ const Dashboard = () => {
       if (budgetsRes.error) throw budgetsRes.error;
       if (timeLogsRes.error) throw timeLogsRes.error;
 
+      // Get unique project IDs and user IDs from time logs
+      const projectIds = [...new Set((timeLogsRes.data || []).map(log => log.project_id))];
+      const userIds = [...new Set((timeLogsRes.data || []).map(log => log.user_id))];
+
+      // Fetch projects and users data separately
+      const [projectsDataRes, usersDataRes] = await Promise.all([
+        projectIds.length > 0 
+          ? supabase.from('projects').select('id, organization_id, name').in('id', projectIds)
+          : Promise.resolve({ data: [], error: null }),
+        userIds.length > 0
+          ? supabase.from('users').select('id, name').in('id', userIds)
+          : Promise.resolve({ data: [], error: null })
+      ]);
+
+      if (projectsDataRes.error) throw projectsDataRes.error;
+      if (usersDataRes.error) throw usersDataRes.error;
+
+      // Create lookup maps
+      const projectsMap = new Map((projectsDataRes.data || []).map(p => [p.id, p]));
+      const usersMap = new Map((usersDataRes.data || []).map(u => [u.id, u]));
+
       // Filter time logs for current organization and process hours worked data by user
-      const organizationTimeLogs = (timeLogsRes.data || []).filter(log => 
-        log.projects?.organization_id === currentOrganization.id
-      );
+      const organizationTimeLogs = (timeLogsRes.data || []).filter(log => {
+        const project = projectsMap.get(log.project_id);
+        return project?.organization_id === currentOrganization.id;
+      });
 
       const hoursWorkedByUser = organizationTimeLogs.reduce((acc: any, log: any) => {
-        const userName = log.users?.name || 'Usuário Desconhecido';
+        const user = usersMap.get(log.user_id);
+        const userName = user?.name || 'Usuário Desconhecido';
         const hours = (Number(log.duration_minutes) || 0) / 60; // Convert minutes to hours
         
         if (!acc[userName]) {
