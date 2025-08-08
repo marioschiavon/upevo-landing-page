@@ -51,8 +51,8 @@ serve(async (req) => {
       .single();
 
     if (!userData) {
-      return new Response(JSON.stringify({ error: 'User not found' }), {
-        status: 404,
+      return new Response(JSON.stringify({ isConnected: false }), {
+        status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
