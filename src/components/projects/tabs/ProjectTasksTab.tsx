@@ -489,7 +489,7 @@ export const ProjectTasksTab = ({ project, onUpdate }: ProjectTasksTabProps) => 
             id="pendente"
             title="A Fazer"
             tasks={taskGroups.pendente}
-            badge={<Badge variant="outline" className="bg-gray-100">{taskGroups.pendente.length}</Badge>}
+            badge={<Badge variant="orange" className="shadow-sm">{taskGroups.pendente.length}</Badge>}
           >
             {taskGroups.pendente.map((task) => (
               <EnhancedTaskCard 
@@ -507,7 +507,7 @@ export const ProjectTasksTab = ({ project, onUpdate }: ProjectTasksTabProps) => 
             id="em_andamento"
             title="Em Progresso"
             tasks={taskGroups.em_andamento}
-            badge={<Badge variant="outline" className="bg-blue-100">{taskGroups.em_andamento.length}</Badge>}
+            badge={<Badge variant="info" className="shadow-sm">{taskGroups.em_andamento.length}</Badge>}
           >
             {taskGroups.em_andamento.map((task) => (
               <EnhancedTaskCard 
@@ -524,7 +524,7 @@ export const ProjectTasksTab = ({ project, onUpdate }: ProjectTasksTabProps) => 
             id="concluida"
             title="Concluído"
             tasks={taskGroups.concluida}
-            badge={<Badge variant="outline" className="bg-green-100">{taskGroups.concluida.length}</Badge>}
+            badge={<Badge variant="success" className="shadow-sm">{taskGroups.concluida.length}</Badge>}
           >
             {taskGroups.concluida.map((task) => (
               <EnhancedTaskCard 

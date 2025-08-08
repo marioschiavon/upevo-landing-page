@@ -46,14 +46,46 @@ All colors MUST be HSL.
     --warning: 38 92% 50%; /* #eab308 - Amarelo para atenção */
 
     /* Custom Design Tokens */
+    --info: 180 70% 40%; /* Ciano/verde-água para informações */
+    --info-foreground: 0 0% 100%;
+
+    /* Paleta para Gráficos */
+    --chart-1: 210 40% 55%; /* Primary Blue */
+    --chart-2: 142 71% 45%; /* Success Green */
+    --chart-3: 38 92% 50%;  /* Warning Yellow */
+    --chart-4: 260 60% 60%; /* Roxo */
+    --chart-5: 10 80% 60%;  /* Laranja/vermelho */
+    --chart-6: 300 70% 55%; /* Magenta */
+    --chart-7: 160 50% 45%; /* Verde escuro */
+    --chart-8: 25 85% 55%;  /* Laranja queimado */
+
+    /* Cores Temáticas Adicionais */
+    --brand-purple: 260 60% 60%;
+    --brand-purple-foreground: 0 0% 100%;
+    --brand-orange: 25 85% 55%;
+    --brand-orange-foreground: 0 0% 100%;
+    --brand-teal: 180 70% 40%;
+    --brand-teal-foreground: 0 0% 100%;
+    --brand-pink: 330 70% 60%;
+    --brand-pink-foreground: 0 0% 100%;
+
     --gradient-primary: linear-gradient(135deg, hsl(210 40% 55%), hsl(200 35% 65%));
     --gradient-hero: linear-gradient(135deg, hsl(210 40% 55% / 0.1), hsl(200 35% 65% / 0.05));
     --gradient-tech: linear-gradient(135deg, hsl(210 11% 15%), hsl(210 40% 55% / 0.8));
     --gradient-cyber: linear-gradient(45deg, hsl(210 40% 55% / 0.2), hsl(215 30% 60% / 0.2), hsl(200 35% 65% / 0.2));
+    --gradient-success: linear-gradient(135deg, hsl(142 71% 45%), hsl(160 50% 45%));
+    --gradient-warning: linear-gradient(135deg, hsl(38 92% 50%), hsl(25 85% 55%));
+    --gradient-info: linear-gradient(135deg, hsl(180 70% 40%), hsl(210 40% 55%));
+    --gradient-purple: linear-gradient(135deg, hsl(260 60% 60%), hsl(300 70% 55%));
+
     --shadow-elegant: 0 10px 30px -10px hsl(210 40% 55% / 0.15);
     --shadow-card: 0 4px 20px -4px hsl(210 11% 15% / 0.08);
     --shadow-glow: 0 0 40px hsl(210 50% 70% / 0.2);
     --shadow-neon: 0 0 20px hsl(210 40% 55% / 0.3), 0 0 40px hsl(200 35% 65% / 0.2);
+    --shadow-success: 0 0 20px hsl(142 71% 45% / 0.3);
+    --shadow-warning: 0 0 20px hsl(38 92% 50% / 0.3);
+    --shadow-info: 0 0 20px hsl(180 70% 40% / 0.3);
+    --shadow-purple: 0 0 20px hsl(260 60% 60% / 0.3);
     
     /* Animation variables */
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -109,6 +141,29 @@ All colors MUST be HSL.
     --success: 142 69% 58%; /* Verde mais claro no escuro */
     --neutral: 210 17% 65%; /* Cinza neutro mais claro no escuro */
     --warning: 38 92% 60%; /* Amarelo mais claro no escuro */
+    --info: 180 70% 60%; /* Ciano/verde-água mais claro para dark mode */
+    --info-foreground: 15 8% 8%;
+
+    /* Paleta para Gráficos (Dark Mode) */
+    --chart-1: 210 45% 65%; /* Primary Blue (Dark) */
+    --chart-2: 142 69% 58%; /* Success Green (Dark) */
+    --chart-3: 38 92% 60%;  /* Warning Yellow (Dark) */
+    --chart-4: 260 60% 70%; /* Roxo mais claro */
+    --chart-5: 10 80% 70%;  /* Laranja/vermelho mais claro */
+    --chart-6: 300 70% 65%; /* Magenta mais claro */
+    --chart-7: 160 50% 55%; /* Verde escuro mais claro */
+    --chart-8: 25 85% 65%;  /* Laranja queimado mais claro */
+
+    /* Cores Temáticas Adicionais (Dark Mode) */
+    --brand-purple: 260 60% 70%;
+    --brand-purple-foreground: 15 8% 8%;
+    --brand-orange: 25 85% 65%;
+    --brand-orange-foreground: 15 8% 8%;
+    --brand-teal: 180 70% 60%;
+    --brand-teal-foreground: 15 8% 8%;
+    --brand-pink: 330 70% 70%;
+    --brand-pink-foreground: 15 8% 8%;
+
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
     --sidebar-primary: 224.3 76.3% 48%;

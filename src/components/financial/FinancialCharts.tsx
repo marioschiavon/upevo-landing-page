@@ -74,9 +74,9 @@ export const FinancialCharts = ({ payments }: FinancialChartsProps) => {
               <Line 
                 type="monotone" 
                 dataKey="revenue" 
-                stroke="#22c55e" 
+                stroke="hsl(var(--chart-2))" 
                 strokeWidth={2}
-                dot={{ fill: '#22c55e' }}
+                dot={{ fill: 'hsl(var(--chart-2))' }}
               />
             </LineChart>
           </ResponsiveContainer>
@@ -101,7 +101,7 @@ export const FinancialCharts = ({ payments }: FinancialChartsProps) => {
                 dataKey="value"
               >
                 {pieData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
+                  <Cell key={`cell-${index}`} fill={`hsl(var(--chart-${(index % 5) + 1}))`} />
                 ))}
               </Pie>
               <Tooltip 

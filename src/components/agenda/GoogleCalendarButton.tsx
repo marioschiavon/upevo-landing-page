@@ -87,9 +87,10 @@ export function GoogleCalendarButton({
 
   return (
     <Button
-      variant={isConnected ? "outline" : "secondary"}
+      variant={isConnected ? "success" : "info"}
       onClick={handleGoogleAuth}
       disabled={loading}
+      className="shadow-md hover:shadow-lg transition-all duration-300"
     >
       {isConnected ? (
         <>

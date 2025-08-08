@@ -59,7 +59,7 @@ export function AppSidebar() {
       className="border-r shadow-sm bg-gradient-to-b from-background to-muted/20"
     >
       <SidebarHeader className="border-b border-border/40">
-        <div className="flex justify-center py-6">
+        <div className="flex justify-center py-6 bg-gradient-to-r from-primary/5 to-accent/5">
           <img
             src="/lovable-uploads/e20659b7-17a3-4fba-a781-da7aeb501e68.png"
             alt="Upevolution logo"
@@ -71,7 +71,7 @@ export function AppSidebar() {
 
       <SidebarContent className="px-3 py-4">
         <SidebarGroup className="mb-6">
-          <SidebarGroupLabel className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+          <SidebarGroupLabel className="text-xs font-semibold text-brand-purple uppercase tracking-wider mb-3">
             Principais
           </SidebarGroupLabel>
           <SidebarGroupContent>
@@ -96,7 +96,7 @@ export function AppSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+          <SidebarGroupLabel className="text-xs font-semibold text-brand-teal uppercase tracking-wider mb-3">
             Gestão
           </SidebarGroupLabel>
           <SidebarGroupContent>

@@ -173,7 +173,7 @@ export function NewClientModal({ isOpen, onClose, onSuccess, organizations }: Ne
               <Button type="button" variant="outline" onClick={onClose}>
                 Cancelar
               </Button>
-              <Button type="submit" disabled={loading}>
+              <Button type="submit" disabled={loading} variant="success" className="shadow-md hover:shadow-lg">
                 {loading ? "Salvando..." : "Salvar Cliente"}
               </Button>
             </DialogFooter>

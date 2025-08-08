@@ -316,7 +316,7 @@ export function NewProjectModal({
               <Button type="button" variant="outline" onClick={onClose}>
                 Cancelar
               </Button>
-              <Button type="submit" disabled={loading}>
+              <Button type="submit" disabled={loading} variant="purple" className="shadow-md hover:shadow-lg">
                 {loading ? "Criando..." : "Criar Projeto"}
               </Button>
             </DialogFooter>

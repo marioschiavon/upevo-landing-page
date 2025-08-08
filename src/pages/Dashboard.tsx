@@ -380,20 +380,20 @@ const Dashboard = () => {
                 <AreaChart data={chartData}>
                   <defs>
                     <linearGradient id="colorReceived" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#22c55e" stopOpacity={0.8}/>
-                      <stop offset="95%" stopColor="#22c55e" stopOpacity={0.1}/>
+                      <stop offset="5%" stopColor="hsl(var(--chart-2))" stopOpacity={0.8}/>
+                      <stop offset="95%" stopColor="hsl(var(--chart-2))" stopOpacity={0.1}/>
                     </linearGradient>
                     <linearGradient id="colorPending" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#94a3b8" stopOpacity={0.8}/>
-                      <stop offset="95%" stopColor="#94a3b8" stopOpacity={0.1}/>
+                      <stop offset="5%" stopColor="hsl(var(--chart-4))" stopOpacity={0.8}/>
+                      <stop offset="95%" stopColor="hsl(var(--chart-4))" stopOpacity={0.1}/>
                     </linearGradient>
                   </defs>
                   <XAxis dataKey="month" />
                   <YAxis />
                   <CartesianGrid strokeDasharray="3 3" />
                   <Tooltip />
-                  <Area type="monotone" dataKey="valorRecebido" stackId="1" stroke="#22c55e" fill="url(#colorReceived)" />
-                  <Area type="monotone" dataKey="valorVencer" stackId="1" stroke="#94a3b8" fill="url(#colorPending)" />
+                  <Area type="monotone" dataKey="valorRecebido" stackId="1" stroke="hsl(var(--chart-2))" fill="url(#colorReceived)" />
+                  <Area type="monotone" dataKey="valorVencer" stackId="1" stroke="hsl(var(--chart-4))" fill="url(#colorPending)" />
                 </AreaChart>
               </ResponsiveContainer>
             </CardContent>

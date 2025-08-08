@@ -78,29 +78,33 @@ export const EnhancedTaskCard = ({ task, onEdit, onDelete }: EnhancedTaskCardPro
         return {
           variant: 'destructive' as const,
           icon: <Flag className="h-3 w-3" />,
-          gradient: 'from-red-500/10 to-red-600/5',
-          border: 'border-l-red-500'
+          gradient: 'from-red-500/15 to-pink-500/10',
+          border: 'border-l-red-500',
+          glow: 'shadow-red-500/20'
         };
       case 'media':
         return {
-          variant: 'default' as const,
+          variant: 'purple' as const,
           icon: <Flag className="h-3 w-3" />,
-          gradient: 'from-blue-500/10 to-blue-600/5',
-          border: 'border-l-blue-500'
+          gradient: 'from-brand-purple/15 to-purple-500/10',
+          border: 'border-l-brand-purple',
+          glow: 'shadow-purple/20'
         };
       case 'baixa':
         return {
-          variant: 'secondary' as const,
+          variant: 'teal' as const,
           icon: <Flag className="h-3 w-3" />,
-          gradient: 'from-gray-500/10 to-gray-600/5',
-          border: 'border-l-gray-500'
+          gradient: 'from-brand-teal/15 to-teal-500/10',
+          border: 'border-l-brand-teal',
+          glow: 'shadow-info/20'
         };
       default:
         return {
           variant: 'default' as const,
           icon: <Flag className="h-3 w-3" />,
           gradient: 'from-gray-500/10 to-gray-600/5',
-          border: 'border-l-gray-500'
+          border: 'border-l-gray-500',
+          glow: ''
         };
     }
   };
@@ -109,18 +113,18 @@ export const EnhancedTaskCard = ({ task, onEdit, onDelete }: EnhancedTaskCardPro
     switch (status) {
       case 'concluida':
         return {
-          style: 'opacity-75 bg-gradient-to-br from-green-50 to-green-100/50',
+          style: 'opacity-75 bg-gradient-to-br from-green-50 to-emerald-100/50 dark:from-green-950/30 dark:to-emerald-950/20',
           border: 'border-l-4 border-l-green-500'
         };
       case 'em_andamento':
         return {
-          style: 'bg-gradient-to-br from-slate-50 to-slate-100/50',
-          border: 'border-l-4 border-l-slate-400'
+          style: 'bg-gradient-to-br from-blue-50 to-indigo-100/50 dark:from-blue-950/30 dark:to-indigo-950/20',
+          border: 'border-l-4 border-l-blue-500'
         };
       case 'pendente':
         return {
-          style: 'bg-gradient-to-br from-gray-50 to-gray-100/50',
-          border: 'border-l-4 border-l-gray-300'
+          style: 'bg-gradient-to-br from-orange-50 to-amber-100/50 dark:from-orange-950/30 dark:to-amber-950/20',
+          border: 'border-l-4 border-l-orange-400'
         };
       default:
         return {
@@ -194,7 +198,7 @@ export const EnhancedTaskCard = ({ task, onEdit, onDelete }: EnhancedTaskCardPro
       className={`
         relative overflow-hidden cursor-grab active:cursor-grabbing transition-all duration-200
         ${statusConfig.style} ${statusConfig.border}
-        ${isDragging ? 'opacity-50 shadow-2xl scale-105 rotate-2' : 'hover:shadow-lg hover:-translate-y-1'}
+        ${isDragging ? 'opacity-50 shadow-2xl scale-105 rotate-2' : `hover:shadow-lg hover:-translate-y-1 ${priorityConfig.glow ? `hover:${priorityConfig.glow}` : ''}`}
         ${task.status === 'concluida' ? 'saturate-50' : ''}
       `}
       onMouseEnter={() => setIsHovered(true)}
@@ -287,9 +291,9 @@ export const EnhancedTaskCard = ({ task, onEdit, onDelete }: EnhancedTaskCardPro
         {/* Status indicator dot */}
         <div className="absolute top-2 right-2">
           <div className={`
-            w-2 h-2 rounded-full
+            w-2 h-2 rounded-full shadow-sm
             ${task.status === 'concluida' ? 'bg-green-500' : 
-              task.status === 'em_andamento' ? 'bg-slate-400' : 'bg-gray-300'}
+              task.status === 'em_andamento' ? 'bg-blue-500' : 'bg-orange-400'}
           `} />
         </div>
       </div>

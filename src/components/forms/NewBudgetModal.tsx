@@ -743,7 +743,7 @@ export const NewBudgetModal = ({ isOpen, onClose, onSuccess }: NewBudgetModalPro
               <Button type="button" variant="outline" onClick={onClose}>
                 Cancelar
               </Button>
-              <Button type="submit" disabled={loading}>
+              <Button type="submit" disabled={loading} variant="success" className="shadow-md hover:shadow-lg">
                 {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Salvar Orçamento
               </Button>

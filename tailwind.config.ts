@@ -65,6 +65,36 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				info: {
+					DEFAULT: 'hsl(var(--info))',
+					foreground: 'hsl(var(--info-foreground))'
+				},
+				chart: {
+					'1': 'hsl(var(--chart-1))',
+					'2': 'hsl(var(--chart-2))',
+					'3': 'hsl(var(--chart-3))',
+					'4': 'hsl(var(--chart-4))',
+					'5': 'hsl(var(--chart-5))',
+					'6': 'hsl(var(--chart-6))',
+					'7': 'hsl(var(--chart-7))',
+					'8': 'hsl(var(--chart-8))'
+				},
+				'brand-purple': {
+					DEFAULT: 'hsl(var(--brand-purple))',
+					foreground: 'hsl(var(--brand-purple-foreground))'
+				},
+				'brand-orange': {
+					DEFAULT: 'hsl(var(--brand-orange))',
+					foreground: 'hsl(var(--brand-orange-foreground))'
+				},
+				'brand-teal': {
+					DEFAULT: 'hsl(var(--brand-teal))',
+					foreground: 'hsl(var(--brand-teal-foreground))'
+				},
+				'brand-pink': {
+					DEFAULT: 'hsl(var(--brand-pink))',
+					foreground: 'hsl(var(--brand-pink-foreground))'
 				}
 			},
 			backgroundImage: {
@@ -72,12 +102,20 @@ export default {
 				'gradient-hero': 'var(--gradient-hero)',
 				'gradient-tech': 'var(--gradient-tech)',
 				'gradient-cyber': 'var(--gradient-cyber)',
+				'gradient-success': 'var(--gradient-success)',
+				'gradient-warning': 'var(--gradient-warning)',
+				'gradient-info': 'var(--gradient-info)',
+				'gradient-purple': 'var(--gradient-purple)'
 			},
 			boxShadow: {
 				'elegant': 'var(--shadow-elegant)',
 				'card': 'var(--shadow-card)',
 				'glow': 'var(--shadow-glow)',
 				'neon': 'var(--shadow-neon)',
+				'success': 'var(--shadow-success)',
+				'warning': 'var(--shadow-warning)',
+				'info': 'var(--shadow-info)',
+				'purple': 'var(--shadow-purple)'
 			},
 			borderRadius: {
 				lg: 'var(--radius)',

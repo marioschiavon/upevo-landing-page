@@ -218,7 +218,7 @@ export function TimeTracker({ projectId, projectName }: TimeTrackerProps) {
   return (
     <div className="space-y-6">
       {/* Timer Controls */}
-      <Card>
+      <Card className="bg-gradient-to-br from-primary/5 to-accent/5 border-primary/20">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Clock className="h-5 w-5" />
@@ -228,7 +228,7 @@ export function TimeTracker({ projectId, projectName }: TimeTrackerProps) {
         <CardContent className="space-y-4">
           {activeLog ? (
             <div className="text-center space-y-4">
-              <div className="text-3xl font-mono font-bold text-primary">
+              <div className="text-3xl font-mono font-bold text-primary animate-pulse">
                 {formatDuration(getCurrentTimerDuration())}
               </div>
               <p className="text-muted-foreground">
@@ -239,6 +239,7 @@ export function TimeTracker({ projectId, projectName }: TimeTrackerProps) {
                 disabled={loading}
                 variant="destructive"
                 size="lg"
+                className="shadow-lg hover:shadow-xl transition-all duration-300"
               >
                 <Square className="h-4 w-4 mr-2" />
                 Parar Cronômetro
@@ -250,7 +251,9 @@ export function TimeTracker({ projectId, projectName }: TimeTrackerProps) {
               <Button 
                 onClick={startTimer}
                 disabled={loading}
+                variant="success"
                 size="lg"
+                className="shadow-lg hover:shadow-xl transition-all duration-300"
               >
                 <Play className="h-4 w-4 mr-2" />
                 Iniciar Cronômetro
@@ -261,29 +264,29 @@ export function TimeTracker({ projectId, projectName }: TimeTrackerProps) {
       </Card>
 
       {/* Project Summary */}
-      <Card>
+      <Card className="bg-gradient-to-br from-brand-teal/5 to-info/5 border-brand-teal/20">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <DollarSign className="h-5 w-5" />
+            <DollarSign className="h-5 w-5 text-brand-teal" />
             Resumo do Projeto
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="text-center">
-              <div className="text-2xl font-bold text-primary">
+              <div className="text-2xl font-bold text-brand-teal">
                 {formatDuration(totalHours * 60)}
               </div>
               <p className="text-sm text-muted-foreground">Total de Horas</p>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-primary">
+              <div className="text-2xl font-bold text-brand-purple">
                 {timeLogs.length}
               </div>
               <p className="text-sm text-muted-foreground">Sessões</p>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-primary">
+              <div className="text-2xl font-bold text-green-600">
                 {timeLogs.filter(log => log.billable).length}
               </div>
               <p className="text-sm text-muted-foreground">Faturáveis</p>
@@ -293,10 +296,10 @@ export function TimeTracker({ projectId, projectName }: TimeTrackerProps) {
       </Card>
 
       {/* Recent Logs */}
-      <Card>
+      <Card className="bg-gradient-to-br from-slate-50 to-gray-50 dark:from-slate-950/50 dark:to-gray-950/30">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Calendar className="h-5 w-5" />
+            <Calendar className="h-5 w-5 text-brand-orange" />
             Logs Recentes
           </CardTitle>
         </CardHeader>
@@ -310,11 +313,11 @@ export function TimeTracker({ projectId, projectName }: TimeTrackerProps) {
               {timeLogs.slice(0, 10).map((log) => (
                 <div 
                   key={log.id}
-                  className="flex items-center justify-between p-3 border rounded-lg"
+                  className="flex items-center justify-between p-3 border rounded-lg bg-card/50 hover:bg-card transition-colors"
                 >
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
-                      <Badge variant={log.billable ? "default" : "secondary"}>
+                      <Badge variant={log.billable ? "success" : "orange"}>
                         {log.billable ? "Faturável" : "Não Faturável"}
                       </Badge>
                       <span className="text-sm text-muted-foreground">
@@ -326,7 +329,7 @@ export function TimeTracker({ projectId, projectName }: TimeTrackerProps) {
                     )}
                   </div>
                   <div className="text-right">
-                    <div className="font-semibold">
+                    <div className="font-semibold text-primary">
                       {log.duration_minutes ? formatDuration(log.duration_minutes) : 'Em andamento...'}
                     </div>
                   </div>
