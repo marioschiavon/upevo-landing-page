@@ -80,14 +80,19 @@ const Dashboard = () => {
         supabase.from('payments').select('*').eq('organization_id', currentOrganization.id),
         supabase.from('budgets').select('*').eq('organization_id', currentOrganization.id).eq('status', 'aprovado'),
         supabase
-          .from('task_logs')
+          .from('time_logs')
           .select(`
-            duration_hours,
+            duration_minutes,
             start_time,
-            users!task_logs_user_id_fkey(name)
+            project_id,
+            projects!time_logs_project_id_fkey(
+              organization_id,
+              name
+            ),
+            users!time_logs_user_id_fkey(name)
           `)
           .not('end_time', 'is', null)
-          .not('duration_hours', 'is', null)
+          .not('duration_minutes', 'is', null)
       ]);
 
       if (projectsRes.error) throw projectsRes.error;
@@ -96,10 +101,14 @@ const Dashboard = () => {
       if (budgetsRes.error) throw budgetsRes.error;
       if (timeLogsRes.error) throw timeLogsRes.error;
 
-      // Process hours worked data by user
-      const hoursWorkedByUser = (timeLogsRes.data || []).reduce((acc: any, log: any) => {
+      // Filter time logs for current organization and process hours worked data by user
+      const organizationTimeLogs = (timeLogsRes.data || []).filter(log => 
+        log.projects?.organization_id === currentOrganization.id
+      );
+
+      const hoursWorkedByUser = organizationTimeLogs.reduce((acc: any, log: any) => {
         const userName = log.users?.name || 'Usuário Desconhecido';
-        const hours = Number(log.duration_hours) || 0;
+        const hours = (Number(log.duration_minutes) || 0) / 60; // Convert minutes to hours
         
         if (!acc[userName]) {
           acc[userName] = 0;
