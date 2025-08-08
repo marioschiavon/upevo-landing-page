@@ -154,11 +154,26 @@ serve(async (req) => {
 
     if (path === 'status') {
       // Check connection status
-      const { data: tokenData } = await supabase
+      const { data: tokenData, error: tokenError } = await supabase
         .from('google_calendar_tokens')
         .select('expires_at')
         .eq('user_id', userData.id)
         .single();
+
+      // Handle case when no tokens are found (PGRST116 error)
+      if (tokenError && tokenError.code === 'PGRST116') {
+        return new Response(JSON.stringify({ isConnected: false }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      // Handle other potential errors
+      if (tokenError) {
+        console.error('Error fetching Google Calendar tokens:', tokenError);
+        return new Response(JSON.stringify({ isConnected: false }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
 
       const isConnected = tokenData && new Date(tokenData.expires_at) > new Date();
 
