@@ -25,6 +25,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useOrganization } from "@/contexts/OrganizationContext";
 
 type TimeFilter = '30dias' | '6meses' | 'anoAtual';
+type HoursTimeFilter = 'semana' | 'mes' | 'ano';
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -32,6 +33,7 @@ const Dashboard = () => {
   const { currentOrganization, loading: orgLoading } = useOrganization();
   const [loading, setLoading] = useState(true);
   const [timeFilter, setTimeFilter] = useState<TimeFilter>('anoAtual');
+  const [hoursTimeFilter, setHoursTimeFilter] = useState<HoursTimeFilter>('mes');
   const [dashboardData, setDashboardData] = useState({
     totalProjects: 0,
     totalClients: 0,
@@ -42,6 +44,7 @@ const Dashboard = () => {
   const [projects, setProjects] = useState<any[]>([]);
   const [payments, setPayments] = useState<any[]>([]);
   const [hoursWorkedData, setHoursWorkedData] = useState<any[]>([]);
+  const [organizationTimeLogs, setOrganizationTimeLogs] = useState<any[]>([]);
   const [previousMonthData, setPreviousMonthData] = useState({
     totalProjects: 0,
     totalClients: 0,
@@ -124,28 +127,7 @@ const Dashboard = () => {
         return project?.organization_id === currentOrganization.id;
       });
 
-      const hoursWorkedByUser = organizationTimeLogs.reduce((acc: any, log: any) => {
-        const user = usersMap.get(log.user_id);
-        const userName = user?.name || 'Usuário Desconhecido';
-        const hours = (Number(log.duration_minutes) || 0) / 60; // Convert minutes to hours
-        
-        if (!acc[userName]) {
-          acc[userName] = 0;
-        }
-        acc[userName] += hours;
-        
-        return acc;
-      }, {});
-
-      const hoursWorkedChartData = Object.entries(hoursWorkedByUser)
-        .map(([name, hours]) => ({
-          name,
-          hours: Number(hours),
-        }))
-        .sort((a, b) => b.hours - a.hours)
-        .slice(0, 10); // Top 10 users
-
-      setHoursWorkedData(hoursWorkedChartData);
+      setOrganizationTimeLogs(organizationTimeLogs);
 
       // Current month calculations
       const totalReceived = paymentsRes.data?.filter(p => p.status === 'pago').reduce((sum, p) => sum + Number(p.value), 0) || 0;
@@ -193,6 +175,88 @@ const Dashboard = () => {
       setLoading(false);
     }
   };
+
+  // Generate hours worked chart data based on time filter
+  const generateHoursChartData = (period: HoursTimeFilter) => {
+    const now = new Date();
+    const data = [];
+
+    if (period === 'semana') {
+      // Generate daily data for last 7 days
+      for (let i = 6; i >= 0; i--) {
+        const date = new Date(now);
+        date.setDate(date.getDate() - i);
+        const dayLabel = date.toLocaleDateString('pt-BR', { weekday: 'short' });
+        
+        const dayLogs = organizationTimeLogs.filter(log => {
+          const logDate = new Date(log.start_time);
+          return logDate.toDateString() === date.toDateString();
+        });
+
+        const totalHours = dayLogs.reduce((sum, log) => {
+          return sum + ((Number(log.duration_minutes) || 0) / 60);
+        }, 0);
+
+        data.push({
+          period: dayLabel,
+          horas: Number(totalHours.toFixed(1))
+        });
+      }
+    } else if (period === 'mes') {
+      // Generate daily data for last 30 days
+      for (let i = 29; i >= 0; i--) {
+        const date = new Date(now);
+        date.setDate(date.getDate() - i);
+        const dayLabel = date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+        
+        const dayLogs = organizationTimeLogs.filter(log => {
+          const logDate = new Date(log.start_time);
+          return logDate.toDateString() === date.toDateString();
+        });
+
+        const totalHours = dayLogs.reduce((sum, log) => {
+          return sum + ((Number(log.duration_minutes) || 0) / 60);
+        }, 0);
+
+        data.push({
+          period: dayLabel,
+          horas: Number(totalHours.toFixed(1))
+        });
+      }
+    } else {
+      // Generate monthly data for current year
+      for (let i = 0; i < 12; i++) {
+        const date = new Date(now.getFullYear(), i, 1);
+        const monthName = date.toLocaleDateString('pt-BR', { month: 'short' });
+        
+        const monthLogs = organizationTimeLogs.filter(log => {
+          const logDate = new Date(log.start_time);
+          return logDate.getMonth() === i && logDate.getFullYear() === now.getFullYear();
+        });
+
+        const totalHours = monthLogs.reduce((sum, log) => {
+          return sum + ((Number(log.duration_minutes) || 0) / 60);
+        }, 0);
+
+        data.push({
+          period: monthName,
+          horas: Number(totalHours.toFixed(1))
+        });
+      }
+    }
+    
+    return data;
+  };
+
+  // Update hours chart data when filter or logs change
+  useEffect(() => {
+    if (organizationTimeLogs.length > 0) {
+      const chartData = generateHoursChartData(hoursTimeFilter);
+      setHoursWorkedData(chartData);
+    } else {
+      setHoursWorkedData([]);
+    }
+  }, [organizationTimeLogs, hoursTimeFilter]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -465,25 +529,51 @@ const Dashboard = () => {
             {/* Hours Worked Chart */}
             <Card className="shadow-card">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Clock className="h-5 w-5 text-brand-purple" />
-                  Horas Trabalhadas por Usuário
-                </CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2">
+                    <Clock className="h-5 w-5 text-brand-purple" />
+                    Horas Trabalhadas
+                  </CardTitle>
+                  <div className="flex gap-2">
+                    <Button 
+                      variant={hoursTimeFilter === 'semana' ? 'default' : 'outline'} 
+                      size="sm"
+                      onClick={() => setHoursTimeFilter('semana')}
+                    >
+                      Semana
+                    </Button>
+                    <Button 
+                      variant={hoursTimeFilter === 'mes' ? 'default' : 'outline'} 
+                      size="sm"
+                      onClick={() => setHoursTimeFilter('mes')}
+                    >
+                      Mês
+                    </Button>
+                    <Button 
+                      variant={hoursTimeFilter === 'ano' ? 'default' : 'outline'} 
+                      size="sm"
+                      onClick={() => setHoursTimeFilter('ano')}
+                    >
+                      Ano
+                    </Button>
+                  </div>
+                </div>
               </CardHeader>
               <CardContent>
                 {hoursWorkedData.length > 0 ? (
                   <ResponsiveContainer width="100%" height={300}>
-                    <BarChart data={hoursWorkedData} layout="horizontal">
+                    <AreaChart data={hoursWorkedData}>
+                      <defs>
+                        <linearGradient id="colorHours" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="hsl(var(--brand-purple))" stopOpacity={0.8}/>
+                          <stop offset="95%" stopColor="hsl(var(--brand-purple))" stopOpacity={0.1}/>
+                        </linearGradient>
+                      </defs>
                       <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis type="number" tickFormatter={(value) => `${value}h`} />
-                      <YAxis 
-                        type="category" 
-                        dataKey="name" 
-                        width={100}
-                        tick={{ fontSize: 12 }}
-                      />
+                      <XAxis dataKey="period" />
+                      <YAxis tickFormatter={(value) => `${value}h`} />
                       <Tooltip 
-                        formatter={(value: number) => [`${value.toFixed(1)}h`, 'Horas Trabalhadas']}
+                        formatter={(value: number) => [`${value}h`, 'Horas Trabalhadas']}
                         labelStyle={{ color: 'var(--foreground)' }}
                         contentStyle={{ 
                           backgroundColor: 'var(--card)',
@@ -491,19 +581,21 @@ const Dashboard = () => {
                           borderRadius: '6px'
                         }}
                       />
-                      <Bar 
-                        dataKey="hours" 
-                        fill="hsl(var(--brand-purple))"
-                        radius={[0, 4, 4, 0]}
+                      <Area 
+                        type="monotone" 
+                        dataKey="horas" 
+                        stroke="hsl(var(--brand-purple))" 
+                        fill="url(#colorHours)"
+                        strokeWidth={2}
                       />
-                    </BarChart>
+                    </AreaChart>
                   </ResponsiveContainer>
                 ) : (
                   <div className="text-center py-8">
                     <Clock className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
                     <p className="text-muted-foreground">Nenhum registro de tempo encontrado</p>
                     <p className="text-sm text-muted-foreground mt-1">
-                      Os dados aparecerão quando houver registros de tempo concluídos
+                      Os dados aparecerão quando houver cronômetros iniciados e parados nos projetos
                     </p>
                   </div>
                 )}
