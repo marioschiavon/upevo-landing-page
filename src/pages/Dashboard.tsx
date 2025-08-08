@@ -282,8 +282,6 @@ const Dashboard = () => {
       setHoursWorkedData([]);
       setAllUsersInLogs([]);
       setUserColors(new Map());
-    } else {
-      setHoursWorkedData([]);
     }
   }, [organizationTimeLogs, hoursTimeFilter, usersMap]);
 
