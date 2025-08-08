@@ -41,6 +41,7 @@ const Dashboard = () => {
   });
   const [projects, setProjects] = useState<any[]>([]);
   const [payments, setPayments] = useState<any[]>([]);
+  const [hoursWorkedData, setHoursWorkedData] = useState<any[]>([]);
   const [previousMonthData, setPreviousMonthData] = useState({
     totalProjects: 0,
     totalClients: 0,
@@ -73,17 +74,50 @@ const Dashboard = () => {
       const previousMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
       
       // Fetch summary data
-      const [projectsRes, clientsRes, paymentsRes, budgetsRes] = await Promise.all([
+      const [projectsRes, clientsRes, paymentsRes, budgetsRes, timeLogsRes] = await Promise.all([
         supabase.from('projects').select('id, name, status, created_at').eq('organization_id', currentOrganization.id),
         supabase.from('clients').select('id, created_at').eq('organization_id', currentOrganization.id),
         supabase.from('payments').select('*').eq('organization_id', currentOrganization.id),
-        supabase.from('budgets').select('*').eq('organization_id', currentOrganization.id).eq('status', 'aprovado')
+        supabase.from('budgets').select('*').eq('organization_id', currentOrganization.id).eq('status', 'aprovado'),
+        supabase
+          .from('task_logs')
+          .select(`
+            duration_hours,
+            start_time,
+            users!task_logs_user_id_fkey(name)
+          `)
+          .not('end_time', 'is', null)
+          .not('duration_hours', 'is', null)
       ]);
 
       if (projectsRes.error) throw projectsRes.error;
       if (clientsRes.error) throw clientsRes.error;
       if (paymentsRes.error) throw paymentsRes.error;
       if (budgetsRes.error) throw budgetsRes.error;
+      if (timeLogsRes.error) throw timeLogsRes.error;
+
+      // Process hours worked data by user
+      const hoursWorkedByUser = (timeLogsRes.data || []).reduce((acc: any, log: any) => {
+        const userName = log.users?.name || 'Usuário Desconhecido';
+        const hours = Number(log.duration_hours) || 0;
+        
+        if (!acc[userName]) {
+          acc[userName] = 0;
+        }
+        acc[userName] += hours;
+        
+        return acc;
+      }, {});
+
+      const hoursWorkedChartData = Object.entries(hoursWorkedByUser)
+        .map(([name, hours]) => ({
+          name,
+          hours: Number(hours),
+        }))
+        .sort((a, b) => b.hours - a.hours)
+        .slice(0, 10); // Top 10 users
+
+      setHoursWorkedData(hoursWorkedChartData);
 
       // Current month calculations
       const totalReceived = paymentsRes.data?.filter(p => p.status === 'pago').reduce((sum, p) => sum + Number(p.value), 0) || 0;
@@ -400,6 +434,54 @@ const Dashboard = () => {
           </Card>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            {/* Hours Worked Chart */}
+            <Card className="shadow-card">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Clock className="h-5 w-5 text-brand-purple" />
+                  Horas Trabalhadas por Usuário
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {hoursWorkedData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={300}>
+                    <BarChart data={hoursWorkedData} layout="horizontal">
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis type="number" tickFormatter={(value) => `${value}h`} />
+                      <YAxis 
+                        type="category" 
+                        dataKey="name" 
+                        width={100}
+                        tick={{ fontSize: 12 }}
+                      />
+                      <Tooltip 
+                        formatter={(value: number) => [`${value.toFixed(1)}h`, 'Horas Trabalhadas']}
+                        labelStyle={{ color: 'var(--foreground)' }}
+                        contentStyle={{ 
+                          backgroundColor: 'var(--card)',
+                          border: '1px solid var(--border)',
+                          borderRadius: '6px'
+                        }}
+                      />
+                      <Bar 
+                        dataKey="hours" 
+                        fill="hsl(var(--brand-purple))"
+                        radius={[0, 4, 4, 0]}
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="text-center py-8">
+                    <Clock className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
+                    <p className="text-muted-foreground">Nenhum registro de tempo encontrado</p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Os dados aparecerão quando houver registros de tempo concluídos
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
             {/* Recent Projects */}
             <Card className="shadow-card">
               <CardHeader>
