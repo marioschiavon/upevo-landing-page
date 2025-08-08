@@ -302,7 +302,6 @@ const Projects = () => {
   if (orgLoading) {
     return (
       <div className="min-h-screen bg-background flex">
-        <Sidebar activeItem="projects" />
         <main className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
@@ -317,7 +316,7 @@ const Projects = () => {
   if (!currentOrganization) {
     return (
       <div className="min-h-screen bg-background flex">
-        <Sidebar activeItem="projects" />
+        
         <main className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <Building2 className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />

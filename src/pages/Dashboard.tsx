@@ -265,7 +265,6 @@ const Dashboard = () => {
   if (orgLoading || loading) {
     return (
       <div className="min-h-screen bg-background flex">
-        <Sidebar activeItem="dashboard" />
         <main className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
@@ -280,7 +279,7 @@ const Dashboard = () => {
   if (!currentOrganization) {
     return (
       <div className="min-h-screen bg-background flex">
-        <Sidebar activeItem="dashboard" />
+        
         <main className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <AlertTriangle className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />

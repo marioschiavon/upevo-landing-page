@@ -45,7 +45,7 @@ export function AppSidebar() {
     currentPath === path || (path !== "/" && currentPath.startsWith(path));
 
   return (
-    <Sidebar collapsible className="w-60">
+    <Sidebar collapsible="offcanvas" className="w-60">
       <SidebarHeader>
         <div className="flex items-center gap-2 px-2 py-1.5">
           <img
