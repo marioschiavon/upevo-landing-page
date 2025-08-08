@@ -159,6 +159,11 @@ export function TimeTracker({ projectId, projectName }: TimeTrackerProps) {
 
       const endTime = new Date().toISOString();
       
+      // Calculate duration in minutes
+      const startTime = new Date(activeLog.start_time);
+      const endTimeDate = new Date(endTime);
+      const durationMinutes = Math.round((endTimeDate.getTime() - startTime.getTime()) / (1000 * 60));
+      
       // Update Google Calendar event if it exists and user wants to sync
       if (activeLog.google_calendar_event_id && sendToGoogle) {
         try {
@@ -183,6 +188,7 @@ export function TimeTracker({ projectId, projectName }: TimeTrackerProps) {
         .from('time_logs')
         .update({ 
           end_time: endTime,
+          duration_minutes: durationMinutes,
           description: description || null
         })
         .eq('id', activeLog.id);
