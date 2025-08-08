@@ -34,6 +34,9 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [timeFilter, setTimeFilter] = useState<TimeFilter>('anoAtual');
   const [hoursTimeFilter, setHoursTimeFilter] = useState<HoursTimeFilter>('mes');
+  const [usersMap, setUsersMap] = useState<Map<string, any>>(new Map());
+  const [allUsersInLogs, setAllUsersInLogs] = useState<string[]>([]);
+  const [userColors, setUserColors] = useState<Map<string, string>>(new Map());
   const [dashboardData, setDashboardData] = useState({
     totalProjects: 0,
     totalClients: 0,
@@ -119,7 +122,8 @@ const Dashboard = () => {
 
       // Create lookup maps
       const projectsMap = new Map((projectsDataRes.data || []).map(p => [p.id, p]));
-      const usersMap = new Map((usersDataRes.data || []).map(u => [u.id, u]));
+      const usersMapData = new Map((usersDataRes.data || []).map(u => [u.id, u]));
+      setUsersMap(usersMapData);
 
       // Filter time logs for current organization and process hours worked data by user
       const organizationTimeLogs = (timeLogsRes.data || []).filter(log => {
@@ -177,9 +181,10 @@ const Dashboard = () => {
   };
 
   // Generate hours worked chart data based on time filter
-  const generateHoursChartData = (period: HoursTimeFilter) => {
+  const generateHoursChartData = (period: HoursTimeFilter, usersMapData: Map<string, any>) => {
     const now = new Date();
     const data = [];
+    const usersInPeriod = new Set<string>();
 
     if (period === 'semana') {
       // Generate daily data for last 7 days
@@ -188,19 +193,21 @@ const Dashboard = () => {
         date.setDate(date.getDate() - i);
         const dayLabel = date.toLocaleDateString('pt-BR', { weekday: 'short' });
         
-        const dayLogs = organizationTimeLogs.filter(log => {
+        const periodData: any = { period: dayLabel };
+        
+        organizationTimeLogs.forEach(log => {
           const logDate = new Date(log.start_time);
-          return logDate.toDateString() === date.toDateString();
+          if (logDate.toDateString() === date.toDateString()) {
+            const user = usersMapData.get(log.user_id);
+            const userName = user?.name || 'Usuário Desconhecido';
+            usersInPeriod.add(userName);
+            
+            const hours = (Number(log.duration_minutes) || 0) / 60;
+            periodData[userName] = (periodData[userName] || 0) + hours;
+          }
         });
 
-        const totalHours = dayLogs.reduce((sum, log) => {
-          return sum + ((Number(log.duration_minutes) || 0) / 60);
-        }, 0);
-
-        data.push({
-          period: dayLabel,
-          horas: Number(totalHours.toFixed(1))
-        });
+        data.push(periodData);
       }
     } else if (period === 'mes') {
       // Generate daily data for last 30 days
@@ -209,19 +216,21 @@ const Dashboard = () => {
         date.setDate(date.getDate() - i);
         const dayLabel = date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
         
-        const dayLogs = organizationTimeLogs.filter(log => {
+        const periodData: any = { period: dayLabel };
+        
+        organizationTimeLogs.forEach(log => {
           const logDate = new Date(log.start_time);
-          return logDate.toDateString() === date.toDateString();
+          if (logDate.toDateString() === date.toDateString()) {
+            const user = usersMapData.get(log.user_id);
+            const userName = user?.name || 'Usuário Desconhecido';
+            usersInPeriod.add(userName);
+            
+            const hours = (Number(log.duration_minutes) || 0) / 60;
+            periodData[userName] = (periodData[userName] || 0) + hours;
+          }
         });
 
-        const totalHours = dayLogs.reduce((sum, log) => {
-          return sum + ((Number(log.duration_minutes) || 0) / 60);
-        }, 0);
-
-        data.push({
-          period: dayLabel,
-          horas: Number(totalHours.toFixed(1))
-        });
+        data.push(periodData);
       }
     } else {
       // Generate monthly data for current year
@@ -229,34 +238,54 @@ const Dashboard = () => {
         const date = new Date(now.getFullYear(), i, 1);
         const monthName = date.toLocaleDateString('pt-BR', { month: 'short' });
         
-        const monthLogs = organizationTimeLogs.filter(log => {
+        const periodData: any = { period: monthName };
+        
+        organizationTimeLogs.forEach(log => {
           const logDate = new Date(log.start_time);
-          return logDate.getMonth() === i && logDate.getFullYear() === now.getFullYear();
+          if (logDate.getMonth() === i && logDate.getFullYear() === now.getFullYear()) {
+            const user = usersMapData.get(log.user_id);
+            const userName = user?.name || 'Usuário Desconhecido';
+            usersInPeriod.add(userName);
+            
+            const hours = (Number(log.duration_minutes) || 0) / 60;
+            periodData[userName] = (periodData[userName] || 0) + hours;
+          }
         });
 
-        const totalHours = monthLogs.reduce((sum, log) => {
-          return sum + ((Number(log.duration_minutes) || 0) / 60);
-        }, 0);
-
-        data.push({
-          period: monthName,
-          horas: Number(totalHours.toFixed(1))
-        });
+        data.push(periodData);
       }
     }
+    
+    // Generate colors for users
+    const users = Array.from(usersInPeriod);
+    setAllUsersInLogs(users);
+    
+    const colors = new Map<string, string>();
+    users.forEach((userName, index) => {
+      // Generate HSL colors with good contrast
+      const hue = (index * 137.5) % 360; // Golden angle for good distribution
+      const saturation = 65 + (index % 3) * 10; // Vary saturation slightly
+      const lightness = 45 + (index % 2) * 10; // Vary lightness slightly
+      colors.set(userName, `hsl(${hue}, ${saturation}%, ${lightness}%)`);
+    });
+    setUserColors(colors);
     
     return data;
   };
 
   // Update hours chart data when filter or logs change
   useEffect(() => {
-    if (organizationTimeLogs.length > 0) {
-      const chartData = generateHoursChartData(hoursTimeFilter);
+    if (organizationTimeLogs.length > 0 && usersMap.size > 0) {
+      const chartData = generateHoursChartData(hoursTimeFilter, usersMap);
       setHoursWorkedData(chartData);
     } else {
       setHoursWorkedData([]);
+      setAllUsersInLogs([]);
+      setUserColors(new Map());
+    } else {
+      setHoursWorkedData([]);
     }
-  }, [organizationTimeLogs, hoursTimeFilter]);
+  }, [organizationTimeLogs, hoursTimeFilter, usersMap]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -562,18 +591,20 @@ const Dashboard = () => {
               <CardContent>
                 {hoursWorkedData.length > 0 ? (
                   <ResponsiveContainer width="100%" height={300}>
-                    <AreaChart data={hoursWorkedData}>
+                    <AreaChart data={hoursWorkedData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
                       <defs>
-                        <linearGradient id="colorHours" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="hsl(var(--brand-purple))" stopOpacity={0.8}/>
-                          <stop offset="95%" stopColor="hsl(var(--brand-purple))" stopOpacity={0.1}/>
-                        </linearGradient>
+                        {allUsersInLogs.map((userName, index) => (
+                          <linearGradient key={userName} id={`colorUser${index}`} x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor={userColors.get(userName)} stopOpacity={0.8}/>
+                            <stop offset="95%" stopColor={userColors.get(userName)} stopOpacity={0.1}/>
+                          </linearGradient>
+                        ))}
                       </defs>
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="period" />
                       <YAxis tickFormatter={(value) => `${value}h`} />
                       <Tooltip 
-                        formatter={(value: number) => [`${value}h`, 'Horas Trabalhadas']}
+                        formatter={(value: number, name: string) => [`${Number(value).toFixed(1)}h`, name]}
                         labelStyle={{ color: 'var(--foreground)' }}
                         contentStyle={{ 
                           backgroundColor: 'var(--card)',
@@ -581,13 +612,18 @@ const Dashboard = () => {
                           borderRadius: '6px'
                         }}
                       />
-                      <Area 
-                        type="monotone" 
-                        dataKey="horas" 
-                        stroke="hsl(var(--brand-purple))" 
-                        fill="url(#colorHours)"
-                        strokeWidth={2}
-                      />
+                      {allUsersInLogs.map((userName, index) => (
+                        <Area
+                          key={userName}
+                          type="monotone"
+                          dataKey={userName}
+                          stroke={userColors.get(userName)}
+                          fill={`url(#colorUser${index})`}
+                          strokeWidth={2}
+                          dot={{ fill: userColors.get(userName), strokeWidth: 2, r: 4 }}
+                          activeDot={{ r: 6, stroke: userColors.get(userName), strokeWidth: 2 }}
+                        />
+                      ))}
                     </AreaChart>
                   </ResponsiveContainer>
                 ) : (
