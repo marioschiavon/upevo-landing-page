@@ -12,7 +12,7 @@ import { GoogleCalendarButton } from '@/components/agenda/GoogleCalendarButton';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import { Sidebar } from '@/components/shared/Sidebar';
+
 import { OrganizationDropdown } from '@/components/OrganizationDropdown';
 
 interface CalendarEvent {
