@@ -600,9 +600,22 @@ const Dashboard = () => {
                       </defs>
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="period" />
-                      <YAxis tickFormatter={(value) => `${value}h`} />
+                      <YAxis 
+                        tickFormatter={(value) => {
+                          const minutes = Math.round(value * 60);
+                          return `${minutes}min`;
+                        }} 
+                        domain={[0, (dataMax: number) => {
+                          const maxMinutes = Math.ceil(dataMax * 60);
+                          return Math.ceil(maxMinutes / 15) * 15 / 60; // Round up to nearest 15min interval in hours
+                        }]}
+                        tickCount={8}
+                      />
                       <Tooltip 
-                        formatter={(value: number, name: string) => [`${Number(value).toFixed(1)}h`, name]}
+                        formatter={(value: number, name: string) => {
+                          const minutes = Math.round(value * 60);
+                          return [`${minutes}min`, name];
+                        }}
                         labelStyle={{ color: 'var(--foreground)' }}
                         contentStyle={{ 
                           backgroundColor: 'var(--card)',
