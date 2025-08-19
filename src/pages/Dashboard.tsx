@@ -37,6 +37,11 @@ const Dashboard = () => {
   const [usersMap, setUsersMap] = useState<Map<string, any>>(new Map());
   const [allUsersInLogs, setAllUsersInLogs] = useState<string[]>([]);
   const [userColors, setUserColors] = useState<Map<string, string>>(new Map());
+  const [projectHoursData, setProjectHoursData] = useState<any[]>([]);
+  const [projectHoursTimeFilter, setProjectHoursTimeFilter] = useState<HoursTimeFilter>('mes');
+  const [allProjectsInLogs, setAllProjectsInLogs] = useState<string[]>([]);
+  const [projectColors, setProjectColors] = useState<Map<string, string>>(new Map());
+  const [projectsMap, setProjectsMap] = useState<Map<string, any>>(new Map());
   const [dashboardData, setDashboardData] = useState({
     totalProjects: 0,
     totalClients: 0,
@@ -124,6 +129,7 @@ const Dashboard = () => {
       const projectsMap = new Map((projectsDataRes.data || []).map(p => [p.id, p]));
       const usersMapData = new Map((usersDataRes.data || []).map(u => [u.id, u]));
       setUsersMap(usersMapData);
+      setProjectsMap(projectsMap);
 
       // Filter time logs for current organization and process hours worked data by user
       const organizationTimeLogs = (timeLogsRes.data || []).filter(log => {
@@ -273,6 +279,99 @@ const Dashboard = () => {
     return data;
   };
 
+  // Generate project hours worked chart data based on time filter
+  const generateProjectHoursChartData = (period: HoursTimeFilter, projectsMapData: Map<string, any>) => {
+    const now = new Date();
+    const data = [];
+    const projectsInPeriod = new Set<string>();
+
+    if (period === 'semana') {
+      // Generate daily data for last 7 days
+      for (let i = 6; i >= 0; i--) {
+        const date = new Date(now);
+        date.setDate(date.getDate() - i);
+        const dayLabel = date.toLocaleDateString('pt-BR', { weekday: 'short' });
+        
+        const periodData: any = { period: dayLabel };
+        
+        organizationTimeLogs.forEach(log => {
+          const logDate = new Date(log.start_time);
+          if (logDate.toDateString() === date.toDateString()) {
+            const project = projectsMapData.get(log.project_id);
+            const projectName = project?.name || 'Projeto Desconhecido';
+            projectsInPeriod.add(projectName);
+            
+            const hours = (Number(log.duration_minutes) || 0) / 60;
+            periodData[projectName] = (periodData[projectName] || 0) + hours;
+          }
+        });
+
+        data.push(periodData);
+      }
+    } else if (period === 'mes') {
+      // Generate daily data for last 30 days
+      for (let i = 29; i >= 0; i--) {
+        const date = new Date(now);
+        date.setDate(date.getDate() - i);
+        const dayLabel = date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+        
+        const periodData: any = { period: dayLabel };
+        
+        organizationTimeLogs.forEach(log => {
+          const logDate = new Date(log.start_time);
+          if (logDate.toDateString() === date.toDateString()) {
+            const project = projectsMapData.get(log.project_id);
+            const projectName = project?.name || 'Projeto Desconhecido';
+            projectsInPeriod.add(projectName);
+            
+            const hours = (Number(log.duration_minutes) || 0) / 60;
+            periodData[projectName] = (periodData[projectName] || 0) + hours;
+          }
+        });
+
+        data.push(periodData);
+      }
+    } else {
+      // Generate monthly data for current year
+      for (let i = 0; i < 12; i++) {
+        const date = new Date(now.getFullYear(), i, 1);
+        const monthName = date.toLocaleDateString('pt-BR', { month: 'short' });
+        
+        const periodData: any = { period: monthName };
+        
+        organizationTimeLogs.forEach(log => {
+          const logDate = new Date(log.start_time);
+          if (logDate.getMonth() === i && logDate.getFullYear() === now.getFullYear()) {
+            const project = projectsMapData.get(log.project_id);
+            const projectName = project?.name || 'Projeto Desconhecido';
+            projectsInPeriod.add(projectName);
+            
+            const hours = (Number(log.duration_minutes) || 0) / 60;
+            periodData[projectName] = (periodData[projectName] || 0) + hours;
+          }
+        });
+
+        data.push(periodData);
+      }
+    }
+    
+    // Generate colors for projects
+    const projects = Array.from(projectsInPeriod);
+    setAllProjectsInLogs(projects);
+    
+    const colors = new Map<string, string>();
+    projects.forEach((projectName, index) => {
+      // Generate HSL colors with good contrast
+      const hue = (index * 137.5) % 360; // Golden angle for good distribution
+      const saturation = 65 + (index % 3) * 10; // Vary saturation slightly
+      const lightness = 45 + (index % 2) * 10; // Vary lightness slightly
+      colors.set(projectName, `hsl(${hue}, ${saturation}%, ${lightness}%)`);
+    });
+    setProjectColors(colors);
+    
+    return data;
+  };
+
   // Update hours chart data when filter or logs change
   useEffect(() => {
     if (organizationTimeLogs.length > 0 && usersMap.size > 0) {
@@ -283,7 +382,28 @@ const Dashboard = () => {
       setAllUsersInLogs([]);
       setUserColors(new Map());
     }
+
+    if (organizationTimeLogs.length > 0 && projectsMap.size > 0) {
+      const projectChartData = generateProjectHoursChartData(projectHoursTimeFilter, projectsMap);
+      setProjectHoursData(projectChartData);
+    } else {
+      setProjectHoursData([]);
+      setAllProjectsInLogs([]);
+      setProjectColors(new Map());
+    }
   }, [organizationTimeLogs, hoursTimeFilter, usersMap]);
+
+  // Update project hours chart data when filter or logs change
+  useEffect(() => {
+    if (organizationTimeLogs.length > 0 && projectsMap.size > 0) {
+      const projectChartData = generateProjectHoursChartData(projectHoursTimeFilter, projectsMap);
+      setProjectHoursData(projectChartData);
+    } else {
+      setProjectHoursData([]);
+      setAllProjectsInLogs([]);
+      setProjectColors(new Map());
+    }
+  }, [organizationTimeLogs, projectHoursTimeFilter, projectsMap]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -632,6 +752,88 @@ const Dashboard = () => {
                   <div className="text-center py-8">
                     <Clock className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
                     <p className="text-muted-foreground">Nenhum registro de tempo encontrado</p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Os dados aparecerão quando houver cronômetros iniciados e parados nos projetos
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Project Hours Chart */}
+            <Card className="shadow-card">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2">
+                    <FolderOpen className="h-5 w-5 text-brand-teal" />
+                    Horas por Projeto
+                  </CardTitle>
+                  <div className="flex gap-2">
+                    <Button 
+                      variant={projectHoursTimeFilter === 'semana' ? 'default' : 'outline'} 
+                      size="sm"
+                      onClick={() => setProjectHoursTimeFilter('semana')}
+                    >
+                      Semana
+                    </Button>
+                    <Button 
+                      variant={projectHoursTimeFilter === 'mes' ? 'default' : 'outline'} 
+                      size="sm"
+                      onClick={() => setProjectHoursTimeFilter('mes')}
+                    >
+                      Mês
+                    </Button>
+                    <Button 
+                      variant={projectHoursTimeFilter === 'ano' ? 'default' : 'outline'} 
+                      size="sm"
+                      onClick={() => setProjectHoursTimeFilter('ano')}
+                    >
+                      Ano
+                    </Button>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {projectHoursData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={300}>
+                    <LineChart data={projectHoursData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="period" />
+                      <YAxis 
+                        tickFormatter={(value) => `${value.toFixed(1)}h`}
+                        domain={[0, (dataMax: number) => {
+                          return Math.ceil(dataMax * 1.1); // Add 10% padding
+                        }]}
+                        tickCount={8}
+                      />
+                      <Tooltip 
+                        formatter={(value: number, name: string) => {
+                          return [`${value.toFixed(2)}h`, name];
+                        }}
+                        labelStyle={{ color: 'var(--foreground)' }}
+                        contentStyle={{ 
+                          backgroundColor: 'var(--card)',
+                          border: '1px solid var(--border)',
+                          borderRadius: '6px'
+                        }}
+                      />
+                      {allProjectsInLogs.map((projectName, index) => (
+                        <Line
+                          key={projectName}
+                          type="monotone"
+                          dataKey={projectName}
+                          stroke={projectColors.get(projectName)}
+                          strokeWidth={2}
+                          dot={false}
+                          activeDot={false}
+                        />
+                      ))}
+                    </LineChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="text-center py-8">
+                    <FolderOpen className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
+                    <p className="text-muted-foreground">Nenhum registro de tempo por projeto encontrado</p>
                     <p className="text-sm text-muted-foreground mt-1">
                       Os dados aparecerão quando houver cronômetros iniciados e parados nos projetos
                     </p>
