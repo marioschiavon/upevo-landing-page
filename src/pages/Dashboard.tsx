@@ -47,6 +47,9 @@ const Dashboard = () => {
   const [projects, setProjects] = useState<any[]>([]);
   const [payments, setPayments] = useState<any[]>([]);
   const [hoursWorkedData, setHoursWorkedData] = useState<any[]>([]);
+  const [projectTimeData, setProjectTimeData] = useState<any[]>([]);
+  const [projectColors, setProjectColors] = useState<Map<string, string>>(new Map());
+  const [allProjectsInLogs, setAllProjectsInLogs] = useState<string[]>([]);
   const [organizationTimeLogs, setOrganizationTimeLogs] = useState<any[]>([]);
   const [previousMonthData, setPreviousMonthData] = useState({
     totalProjects: 0,
@@ -133,6 +136,9 @@ const Dashboard = () => {
 
       setOrganizationTimeLogs(organizationTimeLogs);
 
+      // Generate project time data
+      generateProjectTimeData(organizationTimeLogs, projectsMap);
+
       // Current month calculations
       const totalReceived = paymentsRes.data?.filter(p => p.status === 'pago').reduce((sum, p) => sum + Number(p.value), 0) || 0;
       const totalPending = paymentsRes.data?.filter(p => p.status === 'pendente').reduce((sum, p) => sum + Number(p.value), 0) || 0;
@@ -178,6 +184,52 @@ const Dashboard = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Generate project time chart data
+  const generateProjectTimeData = (timeLogs: any[], projectsMap: Map<string, any>) => {
+    const now = new Date();
+    const data = [];
+    const projectsInPeriod = new Set<string>();
+
+    // Generate daily data for last 30 days
+    for (let i = 29; i >= 0; i--) {
+      const date = new Date(now);
+      date.setDate(date.getDate() - i);
+      const dayLabel = date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+      
+      const periodData: any = { date: dayLabel };
+      
+      timeLogs.forEach(log => {
+        const logDate = new Date(log.start_time);
+        if (logDate.toDateString() === date.toDateString()) {
+          const project = projectsMap.get(log.project_id);
+          const projectName = project?.name || 'Projeto Desconhecido';
+          projectsInPeriod.add(projectName);
+          
+          const hours = (Number(log.duration_minutes) || 0) / 60;
+          periodData[projectName] = (periodData[projectName] || 0) + hours;
+        }
+      });
+
+      data.push(periodData);
+    }
+    
+    // Generate colors for projects
+    const projects = Array.from(projectsInPeriod);
+    setAllProjectsInLogs(projects);
+    
+    const colors = new Map<string, string>();
+    projects.forEach((projectName, index) => {
+      // Generate HSL colors with good contrast
+      const hue = (index * 137.5) % 360; // Golden angle for good distribution
+      const saturation = 65 + (index % 3) * 10; // Vary saturation slightly
+      const lightness = 45 + (index % 2) * 10; // Vary lightness slightly
+      colors.set(projectName, `hsl(${hue}, ${saturation}%, ${lightness}%)`);
+    });
+    setProjectColors(colors);
+    
+    setProjectTimeData(data);
   };
 
   // Generate hours worked chart data based on time filter
@@ -562,7 +614,7 @@ const Dashboard = () => {
             </CardContent>
           </Card>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
             {/* Hours Worked Chart */}
             <Card className="shadow-card">
               <CardHeader>
@@ -644,6 +696,68 @@ const Dashboard = () => {
                     <p className="text-muted-foreground">Nenhum registro de tempo encontrado</p>
                     <p className="text-sm text-muted-foreground mt-1">
                       Os dados aparecerão quando houver cronômetros iniciados e parados nos projetos
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Project Time Chart */}
+            <Card className="shadow-card">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FolderOpen className="h-5 w-5 text-brand-orange" />
+                  Tempo por Projeto
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {projectTimeData.length > 0 && allProjectsInLogs.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={300}>
+                    <LineChart data={projectTimeData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="date" />
+                      <YAxis 
+                        tickFormatter={(value) => {
+                          const minutes = Math.round(value * 60);
+                          return `${minutes}min`;
+                        }} 
+                        domain={[0, (dataMax: number) => {
+                          const maxMinutes = Math.ceil(dataMax * 60);
+                          return Math.ceil(maxMinutes / 15) * 15 / 60; // Round up to nearest 15min interval in hours
+                        }]}
+                        tickCount={8}
+                      />
+                      <Tooltip 
+                        formatter={(value: number, name: string) => {
+                          const minutes = Math.round(value * 60);
+                          return [`${minutes}min`, name];
+                        }}
+                        labelStyle={{ color: 'var(--foreground)' }}
+                        contentStyle={{ 
+                          backgroundColor: 'var(--card)',
+                          border: '1px solid var(--border)',
+                          borderRadius: '6px'
+                        }}
+                      />
+                      {allProjectsInLogs.map((projectName, index) => (
+                        <Line
+                          key={projectName}
+                          type="monotone"
+                          dataKey={projectName}
+                          stroke={projectColors.get(projectName)}
+                          strokeWidth={2}
+                          dot={{ fill: projectColors.get(projectName), strokeWidth: 2, r: 4 }}
+                          activeDot={{ r: 6, stroke: projectColors.get(projectName), strokeWidth: 2 }}
+                        />
+                      ))}
+                    </LineChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="text-center py-8">
+                    <FolderOpen className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
+                    <p className="text-muted-foreground">Nenhum tempo registrado por projeto</p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Os dados aparecerão quando houver tempo trabalhado nos projetos
                     </p>
                   </div>
                 )}
@@ -742,43 +856,7 @@ const Dashboard = () => {
             </Card>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Quick Actions */}
-            <Card className="shadow-card">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <TrendingUp className="h-5 w-5 text-secondary" />
-                  Ações Rápidas
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start"
-                  onClick={() => navigate("/projects")}
-                >
-                  <TrendingUp className="h-4 w-4 mr-2" />
-                  Criar Novo Projeto
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start"
-                  onClick={() => navigate("/clients")}
-                >
-                  <Users className="h-4 w-4 mr-2" />
-                  Adicionar Cliente
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start"
-                  onClick={() => navigate("/financial")}
-                >
-                  <TrendingUp className="h-4 w-4 mr-2" />
-                  Ver Financeiro
-                </Button>
-              </CardContent>
-            </Card>
-
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
             {/* Organization Info */}
             <Card className="shadow-card">
               <CardHeader>
