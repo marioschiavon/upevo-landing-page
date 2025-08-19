@@ -541,6 +541,16 @@ const Dashboard = () => {
                       <stop offset="95%" stopColor="hsl(var(--chart-4))" stopOpacity={0.1}/>
                     </linearGradient>
                   </defs>
+                  <defs>
+                    <linearGradient id="colorReceived" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="hsl(var(--chart-2))" stopOpacity={0.8}/>
+                      <stop offset="95%" stopColor="hsl(var(--chart-2))" stopOpacity={0.1}/>
+                    </linearGradient>
+                    <linearGradient id="colorPending" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="hsl(var(--chart-4))" stopOpacity={0.8}/>
+                      <stop offset="95%" stopColor="hsl(var(--chart-4))" stopOpacity={0.1}/>
+                    </linearGradient>
+                  </defs>
                   <XAxis dataKey="month" />
                   <YAxis />
                   <CartesianGrid strokeDasharray="3 3" />
