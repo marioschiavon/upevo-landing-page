@@ -614,7 +614,7 @@ const Dashboard = () => {
             </CardContent>
           </Card>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
             {/* Hours Worked Chart */}
             <Card className="shadow-card">
               <CardHeader>
@@ -856,7 +856,7 @@ const Dashboard = () => {
             </Card>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
             {/* Organization Info */}
             <Card className="shadow-card">
               <CardHeader>
