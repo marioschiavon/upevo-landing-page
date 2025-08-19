@@ -19,7 +19,7 @@ import {
   DollarSign
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Line, LineChart } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Line, LineChart, AreaChart, Area } from 'recharts';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useOrganization } from "@/contexts/OrganizationContext";
