@@ -622,7 +622,8 @@ const Dashboard = () => {
                           dataKey={userName}
                           stroke={userColors.get(userName)}
                           strokeWidth={2}
-                          dot={false}
+                          dot={{ fill: userColors.get(userName), strokeWidth: 2, r: 4 }}
+                          activeDot={{ r: 6, stroke: userColors.get(userName), strokeWidth: 2 }}
                         />
                       ))}
                     </LineChart>
