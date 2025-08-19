@@ -19,7 +19,7 @@ import {
   DollarSign
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Line, LineChart } from 'recharts';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useOrganization } from "@/contexts/OrganizationContext";
@@ -589,15 +589,7 @@ const Dashboard = () => {
               <CardContent>
                 {hoursWorkedData.length > 0 ? (
                   <ResponsiveContainer width="100%" height={300}>
-                    <AreaChart data={hoursWorkedData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                      <defs>
-                        {allUsersInLogs.map((userName, index) => (
-                          <linearGradient key={userName} id={`colorUser${index}`} x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor={userColors.get(userName)} stopOpacity={0.8}/>
-                            <stop offset="95%" stopColor={userColors.get(userName)} stopOpacity={0.1}/>
-                          </linearGradient>
-                        ))}
-                      </defs>
+                    <LineChart data={hoursWorkedData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="period" />
                       <YAxis 
@@ -624,18 +616,17 @@ const Dashboard = () => {
                         }}
                       />
                       {allUsersInLogs.map((userName, index) => (
-                        <Area
+                        <Line
                           key={userName}
                           type="monotone"
                           dataKey={userName}
                           stroke={userColors.get(userName)}
-                          fill={`url(#colorUser${index})`}
                           strokeWidth={2}
                           dot={{ fill: userColors.get(userName), strokeWidth: 2, r: 4 }}
                           activeDot={{ r: 6, stroke: userColors.get(userName), strokeWidth: 2 }}
                         />
                       ))}
-                    </AreaChart>
+                    </LineChart>
                   </ResponsiveContainer>
                 ) : (
                   <div className="text-center py-8">
