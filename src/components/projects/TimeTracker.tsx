@@ -36,6 +36,11 @@ export function TimeTracker({ projectId, projectName }: TimeTrackerProps) {
   const [showStopModal, setShowStopModal] = useState(false);
   const [totalHours, setTotalHours] = useState(0);
   const [isGoogleConnected, setIsGoogleConnected] = useState(false);
+  const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; log: TimeLog | null }>({
+    open: false,
+    log: null
+  });
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   useEffect(() => {
     fetchTimeLogs();
@@ -208,6 +213,47 @@ export function TimeTracker({ projectId, projectName }: TimeTrackerProps) {
     }
   };
 
+  const handleDeleteLog = async () => {
+    if (!deleteDialog.log) return;
+
+    try {
+      setDeleteLoading(true);
+
+      // Delete Google Calendar event if it exists
+      if (deleteDialog.log.google_calendar_event_id) {
+        try {
+          await supabase.functions.invoke('google-calendar-events', {
+            body: {
+              action: 'delete',
+              googleEventId: deleteDialog.log.google_calendar_event_id,
+            },
+          });
+          toast.success('Evento removido do Google Calendar');
+        } catch (googleError) {
+          console.error('Error deleting Google Calendar event:', googleError);
+          toast.error('Erro ao remover evento do Google Calendar');
+        }
+      }
+
+      // Delete time log from database
+      const { error } = await supabase
+        .from('time_logs')
+        .delete()
+        .eq('id', deleteDialog.log.id);
+
+      if (error) throw error;
+
+      toast.success('Log de tempo excluído com sucesso');
+      setDeleteDialog({ open: false, log: null });
+      fetchTimeLogs();
+    } catch (error) {
+      console.error('Error deleting time log:', error);
+      toast.error('Erro ao excluir log de tempo');
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
   const formatDuration = (minutes: number | null) => {
     if (!minutes) return '0h 0m';
     const hours = Math.floor(minutes / 60);
@@ -339,6 +385,16 @@ export function TimeTracker({ projectId, projectName }: TimeTrackerProps) {
                     <div className="font-semibold text-primary">
                       {log.duration_minutes ? formatDuration(log.duration_minutes) : 'Em andamento...'}
                     </div>
+                    {log.end_time && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setDeleteDialog({ open: true, log })}
+                        className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
                   </div>
                 </div>
               ))}
@@ -355,6 +411,20 @@ export function TimeTracker({ projectId, projectName }: TimeTrackerProps) {
         loading={loading}
         activeLog={activeLog}
         isGoogleConnected={isGoogleConnected}
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <DeleteConfirmationDialog
+        open={deleteDialog.open}
+        onOpenChange={(open) => setDeleteDialog({ open, log: null })}
+        onConfirm={handleDeleteLog}
+        title="Excluir Log de Tempo"
+        description={
+          deleteDialog.log 
+            ? `Tem certeza que deseja excluir este log de tempo de ${formatDuration(deleteDialog.log.duration_minutes)}? Esta ação não pode ser desfeita.`
+            : ""
+        }
+        loading={deleteLoading}
       />
     </div>
   );
