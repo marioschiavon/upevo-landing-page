@@ -14,7 +14,7 @@ interface Task {
   id: string;
   title: string;
   description: string;
-  status: 'pendente' | 'em_andamento' | 'concluida';
+  status: 'todo' | 'in_progress' | 'done';
   priority: 'baixa' | 'media' | 'alta';
   assigned_to: string | null;
   due_date: string | null;
@@ -111,17 +111,17 @@ export const EnhancedTaskCard = ({ task, onEdit, onDelete }: EnhancedTaskCardPro
 
   const getStatusConfig = (status: string) => {
     switch (status) {
-      case 'concluida':
+      case 'done':
         return {
           style: 'opacity-75 bg-gradient-to-br from-green-50 to-emerald-100/50 dark:from-green-950/30 dark:to-emerald-950/20',
           border: 'border-l-4 border-l-green-500'
         };
-      case 'em_andamento':
+      case 'in_progress':
         return {
           style: 'bg-gradient-to-br from-blue-50 to-indigo-100/50 dark:from-blue-950/30 dark:to-indigo-950/20',
           border: 'border-l-4 border-l-blue-500'
         };
-      case 'pendente':
+      case 'todo':
         return {
           style: 'bg-gradient-to-br from-orange-50 to-amber-100/50 dark:from-orange-950/30 dark:to-amber-950/20',
           border: 'border-l-4 border-l-orange-400'
@@ -199,7 +199,7 @@ export const EnhancedTaskCard = ({ task, onEdit, onDelete }: EnhancedTaskCardPro
         relative overflow-hidden cursor-grab active:cursor-grabbing transition-all duration-200
         ${statusConfig.style} ${statusConfig.border}
         ${isDragging ? 'opacity-50 shadow-2xl scale-105 rotate-2' : `hover:shadow-lg hover:-translate-y-1 ${priorityConfig.glow ? `hover:${priorityConfig.glow}` : ''}`}
-        ${task.status === 'concluida' ? 'saturate-50' : ''}
+        ${task.status === 'done' ? 'saturate-50' : ''}
       `}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
@@ -212,7 +212,7 @@ export const EnhancedTaskCard = ({ task, onEdit, onDelete }: EnhancedTaskCardPro
         {/* Header with title and priority */}
         <div className="flex items-start justify-between gap-2">
           <h4 className={`font-medium text-sm leading-tight flex-1 ${
-            task.status === 'concluida' ? 'line-through text-muted-foreground' : 'text-foreground'
+            task.status === 'done' ? 'line-through text-muted-foreground' : 'text-foreground'
           }`}>
             {task.title}
           </h4>
@@ -292,8 +292,8 @@ export const EnhancedTaskCard = ({ task, onEdit, onDelete }: EnhancedTaskCardPro
         <div className="absolute top-2 right-2">
           <div className={`
             w-2 h-2 rounded-full shadow-sm
-            ${task.status === 'concluida' ? 'bg-green-500' : 
-              task.status === 'em_andamento' ? 'bg-blue-500' : 'bg-orange-400'}
+            ${task.status === 'done' ? 'bg-green-500' : 
+              task.status === 'in_progress' ? 'bg-blue-500' : 'bg-orange-400'}
           `} />
         </div>
       </div>

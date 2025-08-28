@@ -18,7 +18,7 @@ interface Task {
   id: string;
   title: string;
   description: string;
-  status: 'pendente' | 'em_andamento' | 'concluida';
+  status: 'todo' | 'in_progress' | 'done';
   priority: 'baixa' | 'media' | 'alta';
   assigned_to: string | null;
   due_date: string | null;
@@ -146,11 +146,11 @@ export const TaskDetailModal = ({ task, open, onOpenChange, onUpdate }: TaskDeta
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'concluida':
+      case 'done':
         return 'success';
-      case 'em_andamento':
+      case 'in_progress':
         return 'neutral';
-      case 'pendente':
+      case 'todo':
         return 'outline';
       default:
         return 'outline';
@@ -224,9 +224,9 @@ export const TaskDetailModal = ({ task, open, onOpenChange, onUpdate }: TaskDeta
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="pendente">Pendente</SelectItem>
-                      <SelectItem value="em_andamento">Em Andamento</SelectItem>
-                      <SelectItem value="concluida">Concluída</SelectItem>
+                      <SelectItem value="todo">Pendente</SelectItem>
+                      <SelectItem value="in_progress">Em Andamento</SelectItem>
+                      <SelectItem value="done">Concluída</SelectItem>
                     </SelectContent>
                   </Select>
                   
@@ -247,8 +247,8 @@ export const TaskDetailModal = ({ task, open, onOpenChange, onUpdate }: TaskDeta
               ) : (
                 <>
                   <Badge variant={getStatusColor(task.status)}>
-                    {task.status === 'pendente' ? 'Pendente' : 
-                     task.status === 'em_andamento' ? 'Em Andamento' : 'Concluída'}
+                    {task.status === 'todo' ? 'Pendente' : 
+                     task.status === 'in_progress' ? 'Em Andamento' : 'Concluída'}
                   </Badge>
                   
                   <Badge variant={getPriorityColor(task.priority)} className="flex items-center gap-1">
