@@ -14,7 +14,7 @@ interface Task {
   id: string;
   title: string;
   description: string;
-  status: 'todo' | 'in_progress' | 'done';
+  status: 'pendente' | 'em_andamento' | 'concluida';
   priority: 'baixa' | 'media' | 'alta';
   assigned_to: string | null;
   due_date: string | null;
@@ -111,17 +111,17 @@ export const EnhancedTaskCard = ({ task, onEdit, onDelete }: EnhancedTaskCardPro
 
   const getStatusConfig = (status: string) => {
     switch (status) {
-      case 'done':
+      case 'concluida':
         return {
           style: 'opacity-75 bg-gradient-to-br from-green-50 to-emerald-100/50 dark:from-green-950/30 dark:to-emerald-950/20',
           border: 'border-l-4 border-l-green-500'
         };
-      case 'in_progress':
+      case 'em_andamento':
         return {
           style: 'bg-gradient-to-br from-blue-50 to-indigo-100/50 dark:from-blue-950/30 dark:to-indigo-950/20',
           border: 'border-l-4 border-l-blue-500'
         };
-      case 'todo':
+      case 'pendente':
         return {
           style: 'bg-gradient-to-br from-orange-50 to-amber-100/50 dark:from-orange-950/30 dark:to-amber-950/20',
           border: 'border-l-4 border-l-orange-400'
@@ -291,9 +291,10 @@ export const EnhancedTaskCard = ({ task, onEdit, onDelete }: EnhancedTaskCardPro
         {/* Status indicator dot */}
         <div className="absolute top-2 right-2">
           <div className={`
-            w-2 h-2 rounded-full shadow-sm
-            ${task.status === 'done' ? 'bg-green-500' : 
-              task.status === 'in_progress' ? 'bg-blue-500' : 'bg-orange-400'}
+            w-2 h-2 rounded-full shadow-sm ${
+              task.status === 'concluida' ? 'bg-green-500' : 
+              task.status === 'em_andamento' ? 'bg-blue-500' : 'bg-orange-400'
+            }
           `} />
         </div>
       </div>

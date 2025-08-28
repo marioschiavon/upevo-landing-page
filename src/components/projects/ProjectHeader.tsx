@@ -43,7 +43,7 @@ export const ProjectHeader = ({ project, onUpdate }: ProjectHeaderProps) => {
     switch (status) {
       case 'em_andamento':
         return 'default';
-      case 'concluido':
+      case 'concluida':
         return 'secondary';
       case 'pausado':
         return 'outline';
@@ -56,7 +56,7 @@ export const ProjectHeader = ({ project, onUpdate }: ProjectHeaderProps) => {
     switch (status) {
       case 'em_andamento':
         return 'Em Andamento';
-      case 'concluido':
+      case 'concluida':
         return 'Concluído';
       case 'pausado':
         return 'Pausado';

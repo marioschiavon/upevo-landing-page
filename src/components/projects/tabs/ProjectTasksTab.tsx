@@ -42,7 +42,7 @@ interface Task {
   id: string;
   title: string;
   description: string;
-  status: 'todo' | 'in_progress' | 'done';
+  status: 'pendente' | 'em_andamento' | 'concluida';
   priority: 'baixa' | 'media' | 'alta';
   assigned_to: string | null;
   due_date: string | null;
@@ -70,7 +70,7 @@ export const ProjectTasksTab = ({ project, onUpdate }: ProjectTasksTabProps) => 
     title: "",
     description: "",
     priority: "media",
-    status: "todo",
+    status: "pendente",
     due_date: "",
   });
 
@@ -123,13 +123,7 @@ export const ProjectTasksTab = ({ project, onUpdate }: ProjectTasksTabProps) => 
     }
 
     if (statusFilter !== "all") {
-      const statusMap: { [key: string]: string } = {
-        'pendente': 'todo',
-        'em_andamento': 'in_progress',
-        'concluida': 'done'
-      };
-      const dbStatus = statusMap[statusFilter] || statusFilter;
-      filtered = filtered.filter(task => task.status === dbStatus);
+      filtered = filtered.filter(task => task.status === statusFilter);
     }
 
     if (priorityFilter !== "all") {
@@ -161,7 +155,7 @@ export const ProjectTasksTab = ({ project, onUpdate }: ProjectTasksTabProps) => 
         title: "",
         description: "",
         priority: "media",
-        status: "todo",
+        status: "pendente",
         due_date: "",
       });
       fetchTasks();
@@ -257,11 +251,11 @@ export const ProjectTasksTab = ({ project, onUpdate }: ProjectTasksTabProps) => 
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'done':
-        return 'secondary';
-      case 'in_progress':
-        return 'default';
-      case 'todo':
+      case 'concluida':
+        return 'success';
+      case 'em_andamento':
+        return 'neutral';
+      case 'pendente':
         return 'outline';
       default:
         return 'outline';
@@ -270,8 +264,7 @@ export const ProjectTasksTab = ({ project, onUpdate }: ProjectTasksTabProps) => 
 
   // Handlers do drag and drop
   const handleDragStart = (event: DragStartEvent) => {
-    const { active } = event;
-    setActiveId(active.id as string);
+    setActiveId(event.active.id as string);
   };
 
   const handleDragEnd = async (event: DragEndEvent) => {
@@ -283,7 +276,7 @@ export const ProjectTasksTab = ({ project, onUpdate }: ProjectTasksTabProps) => 
     }
 
     const taskId = active.id as string;
-    const newStatus = over.id as string;
+    const newStatus = over.id as Task['status'];
     
     // Verifica se o status mudou
     const task = tasks.find(t => t.id === taskId);
@@ -296,9 +289,9 @@ export const ProjectTasksTab = ({ project, onUpdate }: ProjectTasksTabProps) => 
 
   const groupTasksByStatus = () => {
     const groups = {
-      todo: filteredTasks.filter(task => task.status === 'todo'),
-      in_progress: filteredTasks.filter(task => task.status === 'in_progress'),
-      done: filteredTasks.filter(task => task.status === 'done'),
+      pendente: filteredTasks.filter(task => task.status === 'pendente'),
+      em_andamento: filteredTasks.filter(task => task.status === 'em_andamento'),
+      concluida: filteredTasks.filter(task => task.status === 'concluida'),
     };
     return groups;
   };
@@ -410,7 +403,7 @@ export const ProjectTasksTab = ({ project, onUpdate }: ProjectTasksTabProps) => 
                   <div>
                     <Label>Status</Label>
                     <Select value={newTask.status} onValueChange={(value) => setNewTask(prev => ({ ...prev, status: value }))}>
-                      <SelectTrigger>
+                      <SelectTrigger className="w-full">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -460,7 +453,7 @@ export const ProjectTasksTab = ({ project, onUpdate }: ProjectTasksTabProps) => 
               <SelectTrigger className="w-full sm:w-40">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="w-full">
                 <SelectItem value="all">Todos os Status</SelectItem>
                 <SelectItem value="todo">Pendente</SelectItem>
                 <SelectItem value="in_progress">Em Andamento</SelectItem>
@@ -472,7 +465,7 @@ export const ProjectTasksTab = ({ project, onUpdate }: ProjectTasksTabProps) => 
               <SelectTrigger className="w-full sm:w-40">
                 <SelectValue placeholder="Prioridade" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="w-full">
                 <SelectItem value="all">Todas</SelectItem>
                 <SelectItem value="baixa">Baixa</SelectItem>
                 <SelectItem value="media">Média</SelectItem>
@@ -492,12 +485,12 @@ export const ProjectTasksTab = ({ project, onUpdate }: ProjectTasksTabProps) => 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Coluna Pendente */}
           <DroppableColumn
-            id="todo"
+            id="pendente"
             title="A Fazer"
-            tasks={taskGroups.todo}
-            badge={<Badge variant="orange" className="shadow-sm">{taskGroups.todo.length}</Badge>}
+            tasks={taskGroups.pendente}
+            badge={<Badge variant="orange" className="shadow-sm">{taskGroups.pendente.length}</Badge>}
           >
-            {taskGroups.todo.map((task) => (
+            {taskGroups.pendente.map((task) => (
               <EnhancedTaskCard 
                 key={task.id} 
                 task={task} 
@@ -510,12 +503,12 @@ export const ProjectTasksTab = ({ project, onUpdate }: ProjectTasksTabProps) => 
 
           {/* Coluna Em Andamento */}
           <DroppableColumn
-            id="in_progress"
+            id="em_andamento"
             title="Em Progresso"
-            tasks={taskGroups.in_progress}
-            badge={<Badge variant="info" className="shadow-sm">{taskGroups.in_progress.length}</Badge>}
+            tasks={taskGroups.em_andamento}
+            badge={<Badge variant="info" className="shadow-sm">{taskGroups.em_andamento.length}</Badge>}
           >
-            {taskGroups.in_progress.map((task) => (
+            {taskGroups.em_andamento.map((task) => (
               <EnhancedTaskCard 
                 key={task.id} 
                 task={task} 
@@ -527,12 +520,12 @@ export const ProjectTasksTab = ({ project, onUpdate }: ProjectTasksTabProps) => 
 
           {/* Coluna Concluída */}
           <DroppableColumn
-            id="done"
+            id="concluida"
             title="Concluído"
-            tasks={taskGroups.done}
-            badge={<Badge variant="success" className="shadow-sm">{taskGroups.done.length}</Badge>}
+            tasks={taskGroups.concluida}
+            badge={<Badge variant="success" className="shadow-sm">{taskGroups.concluida.length}</Badge>}
           >
-            {taskGroups.done.map((task) => (
+            {taskGroups.concluida.map((task) => (
               <EnhancedTaskCard 
                 key={task.id} 
                 task={task} 

@@ -784,7 +784,7 @@ const Dashboard = () => {
                       </div>
                       <div className="flex items-center gap-2">
                         <Badge variant={
-                          project.status === 'concluido' ? 'success' : 
+                          project.status === 'concluida' ? 'success' : 
                           project.status === 'pausado' ? 'neutral' : 'outline'
                         }>
                           {project.status === 'em_andamento' ? 'Em Andamento' :

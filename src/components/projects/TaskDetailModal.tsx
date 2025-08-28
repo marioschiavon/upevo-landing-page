@@ -18,7 +18,7 @@ interface Task {
   id: string;
   title: string;
   description: string;
-  status: 'todo' | 'in_progress' | 'done';
+  status: 'pendente' | 'em_andamento' | 'concluida';
   priority: 'baixa' | 'media' | 'alta';
   assigned_to: string | null;
   due_date: string | null;
@@ -146,11 +146,11 @@ export const TaskDetailModal = ({ task, open, onOpenChange, onUpdate }: TaskDeta
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'done':
+      case 'concluida':
         return 'success';
-      case 'in_progress':
+      case 'em_andamento':
         return 'neutral';
-      case 'todo':
+      case 'pendente':
         return 'outline';
       default:
         return 'outline';
@@ -220,7 +220,7 @@ export const TaskDetailModal = ({ task, open, onOpenChange, onUpdate }: TaskDeta
                     value={editedTask.status} 
                     onValueChange={(value) => setEditedTask(prev => ({ ...prev, status: value as Task['status'] }))}
                   >
-                    <SelectTrigger className="w-32">
+                    <SelectTrigger className="w-full">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -234,7 +234,7 @@ export const TaskDetailModal = ({ task, open, onOpenChange, onUpdate }: TaskDeta
                     value={editedTask.priority} 
                     onValueChange={(value) => setEditedTask(prev => ({ ...prev, priority: value as Task['priority'] }))}
                   >
-                    <SelectTrigger className="w-32">
+                    <SelectTrigger className="w-full">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -246,7 +246,7 @@ export const TaskDetailModal = ({ task, open, onOpenChange, onUpdate }: TaskDeta
                 </>
               ) : (
                 <>
-                  <Badge variant={getStatusColor(task.status)}>
+                  <Badge variant={getStatusColor(task.status)} className="capitalize">
                     {task.status === 'todo' ? 'Pendente' : 
                      task.status === 'in_progress' ? 'Em Andamento' : 'Concluída'}
                   </Badge>
