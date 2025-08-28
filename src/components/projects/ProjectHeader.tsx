@@ -43,7 +43,7 @@ export const ProjectHeader = ({ project, onUpdate }: ProjectHeaderProps) => {
     switch (status) {
       case 'em_andamento':
         return 'default';
-      case 'finalizado':
+      case 'concluido':
         return 'secondary';
       case 'pausado':
         return 'outline';
@@ -56,8 +56,8 @@ export const ProjectHeader = ({ project, onUpdate }: ProjectHeaderProps) => {
     switch (status) {
       case 'em_andamento':
         return 'Em Andamento';
-      case 'finalizado':
-        return 'Finalizado';
+      case 'concluido':
+        return 'Concluído';
       case 'pausado':
         return 'Pausado';
       default:
@@ -84,7 +84,7 @@ export const ProjectHeader = ({ project, onUpdate }: ProjectHeaderProps) => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="em_andamento">Em Andamento</SelectItem>
-                  <SelectItem value="finalizado">Finalizado</SelectItem>
+                  <SelectItem value="concluido">Concluído</SelectItem>
                   <SelectItem value="pausado">Pausado</SelectItem>
                 </SelectContent>
               </Select>
