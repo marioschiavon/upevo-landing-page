@@ -18,7 +18,7 @@ interface Task {
   id: string;
   title: string;
   description: string;
-  status: 'pendente' | 'em_andamento' | 'concluida';
+  status: 'todo' | 'in_progress' | 'done';
   priority: 'baixa' | 'media' | 'alta';
   assigned_to: string | null;
   due_date: string | null;
