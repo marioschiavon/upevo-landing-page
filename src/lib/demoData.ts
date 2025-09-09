@@ -453,7 +453,7 @@
 +    toast.success('Dados de demonstração carregados com sucesso!');
 +  } catch (error: any) {
 +    console.error('Erro ao carregar dados de demonstração:', error);
-+    toast.error(`Erro ao carregar dados de demonstração: ${error.message}`);
++    toast.error(\`Erro ao carregar dados de demonstração: ${error.message}`);
 +  }
 +}
 ```
