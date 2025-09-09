@@ -11,7 +11,6 @@ import { ArrowLeft, Mail, Lock } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { seedDemoData } from "@/lib/demoData";
 
 const loginSchema = z.object({
   email: z.string().email("Digite um email válido").min(1, "Email é obrigatório"),
@@ -63,34 +62,23 @@ const Login = () => {
 
   const handleDemoLogin = async () => {
     setLoginError("");
-    const demoEmail = "demo@example.com";
-    const demoPassword = "demopassword"; // Use a strong password in production
-
     try {
-      // Try to sign in the demo user
-      let { error } = await signIn(demoEmail, demoPassword);
-
-      if (error) {
-        // If sign-in fails, try to sign up the demo user
-        if (error.message === "Invalid login credentials" || error.message === "User not found") {
-          const { error: signUpError } = await signUp(demoEmail, demoPassword, "Usuário Demo");
-          if (signUpError) throw signUpError;
-          // After successful signup, try to sign in again
-          ({ error } = await signIn(demoEmail, demoPassword));
-          if (error) throw error;
-        } else {
-          throw error;
-        }
-      }
-
-      // If login/signup is successful, seed demo data
-      await seedDemoData(user?.id || ""); // Pass the auth user ID
-
-      toast({ title: "Sucesso", description: "Login de demonstração realizado com sucesso!" });
+      // Simular dados de demonstração no localStorage para modo offline
+      localStorage.setItem('demoMode', 'true');
+      localStorage.setItem('demoUser', JSON.stringify({
+        id: 'demo-user-id',
+        name: 'Usuário Demo',
+        email: 'demo@example.com'
+      }));
+      
+      toast({ 
+        title: "Modo Demonstração", 
+        description: "Explorando o sistema com dados de exemplo!" 
+      });
       navigate("/dashboard");
     } catch (error: any) {
       console.error("Erro no login de demonstração:", error);
-      setLoginError(`Erro no login de demonstração: ${error.message || "Tente novamente."}`);
+      setLoginError("Erro ao carregar modo demonstração. Tente novamente.");
     }
   };
 
