@@ -12,6 +12,8 @@ import { GoogleCalendarButton } from '@/components/agenda/GoogleCalendarButton';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { isDemoMode, getMockData } from '@/lib/mockData';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 import { OrganizationDropdown } from '@/components/OrganizationDropdown';
 
@@ -41,6 +43,27 @@ export default function Agenda() {
 
   // Fetch events from Supabase
   const fetchEvents = async () => {
+    if (isDemoMode()) {
+      const mockData = getMockData();
+      if (mockData) {
+        const formattedEvents: CalendarEvent[] = mockData.events.map(event => ({
+          id: event.id,
+          title: event.title,
+          start: event.start_time,
+          end: event.end_time,
+          backgroundColor: 'hsl(var(--primary))',
+          borderColor: 'hsl(var(--primary))',
+          extendedProps: {
+            description: event.description,
+            origin: event.origin as 'internal' | 'google',
+            googleEventId: event.google_event_id,
+          },
+        }));
+        setEvents(formattedEvents);
+      }
+      return;
+    }
+
     if (!currentOrganization?.id) return;
 
     try {
@@ -92,6 +115,11 @@ export default function Agenda() {
   };
 
   const handleEventSave = async (eventData: any) => {
+    if (isDemoMode()) {
+      toast.success('Evento salvo no modo demonstração');
+      return;
+    }
+
     if (!currentOrganization?.id || !user) return;
 
     try {
@@ -149,6 +177,11 @@ export default function Agenda() {
   };
 
   const handleEventDelete = async () => {
+    if (isDemoMode()) {
+      toast.success('Evento excluído no modo demonstração');
+      return;
+    }
+
     if (!selectedEvent) return;
 
     try {
@@ -186,7 +219,7 @@ export default function Agenda() {
         </div>
 
         {/* Content */}
-        {!currentOrganization ? (
+        {!currentOrganization && !isDemoMode() ? (
           <div className="p-6">
             <Card className="p-8 text-center">
               <CalendarIcon className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
@@ -198,20 +231,33 @@ export default function Agenda() {
           </div>
         ) : (
           <div className="p-6 space-y-6">
+            {/* Demo Mode Alert */}
+            {isDemoMode() && (
+              <Alert className="border-info/50 bg-info/10">
+                <AlertDescription className="text-info">
+                  Você está no modo demonstração. Os dados exibidos são apenas para teste.
+                </AlertDescription>
+              </Alert>
+            )}
+
             {/* Action Header */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
-                <h2 className="text-lg font-semibold">Agenda de {currentOrganization.name}</h2>
+                <h2 className="text-lg font-semibold">
+                  Agenda de {isDemoMode() ? 'Upevolution Demo' : currentOrganization?.name}
+                </h2>
                 <p className="text-muted-foreground">
                   Gerencie seus eventos e compromissos
                 </p>
               </div>
               
               <div className="flex items-center gap-2">
-                <GoogleCalendarButton
-                  isConnected={isGoogleConnected}
-                  onConnectionChange={setIsGoogleConnected}
-                />
+                {!isDemoMode() && (
+                  <GoogleCalendarButton
+                    isConnected={isGoogleConnected}
+                    onConnectionChange={setIsGoogleConnected}
+                  />
+                )}
                 
                 <Button
                   onClick={() => {

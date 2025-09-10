@@ -23,6 +23,8 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useOrganization } from "@/contexts/OrganizationContext";
+import { isDemoMode, getMockData } from "@/lib/mockData";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 type TimeFilter = '30dias' | '6meses' | 'anoAtual';
 type HoursTimeFilter = 'semana' | 'mes' | 'ano';
@@ -60,12 +62,46 @@ const Dashboard = () => {
   });
 
   useEffect(() => {
-    if (currentOrganization) {
+    if (isDemoMode()) {
+      loadDemoData();
+    } else if (currentOrganization) {
       fetchDashboardData();
     } else {
       setLoading(false);
     }
   }, [currentOrganization]);
+
+  const loadDemoData = () => {
+    const mockData = getMockData();
+    if (!mockData) return;
+
+    // Calculate demo dashboard data
+    const totalReceived = mockData.payments.filter(p => p.status === 'pago').reduce((sum, p) => sum + p.value, 0);
+    const totalPending = mockData.payments.filter(p => p.status === 'pendente').reduce((sum, p) => sum + p.value, 0);
+    const approvedBudgets = mockData.budgets.filter(b => b.status === 'aprovado').length;
+
+    setDashboardData({
+      totalProjects: mockData.projects.length,
+      totalClients: mockData.clients.length,
+      totalReceived,
+      totalPending,
+      approvedBudgets
+    });
+
+    // Set previous month data (simulate some growth)
+    setPreviousMonthData({
+      totalProjects: mockData.projects.length - 1,
+      totalClients: mockData.clients.length - 1,
+      totalReceived: totalReceived * 0.8,
+      totalPending: totalPending * 1.2,
+      approvedBudgets: approvedBudgets - 1
+    });
+
+    setProjects(mockData.projects);
+    setPayments(mockData.payments);
+    setOrganizationTimeLogs(mockData.timeLogs);
+    setLoading(false);
+  };
 
   const fetchDashboardData = async () => {
     if (!currentOrganization) return;
@@ -511,14 +547,23 @@ const Dashboard = () => {
             <div>
               <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
               <p className="text-muted-foreground">
-                Visão geral dos projetos e atividades - {currentOrganization.name}
+                Visão geral dos projetos e atividades - {isDemoMode() ? 'Upevolution Demo' : currentOrganization?.name}
               </p>
             </div>
-            <OrganizationDropdown />
+            {!isDemoMode() && <OrganizationDropdown />}
           </div>
         </header>
 
         <div className="p-8">
+          {/* Demo Mode Alert */}
+          {isDemoMode() && (
+            <Alert className="mb-6 border-info/50 bg-info/10">
+              <AlertDescription className="text-info">
+                Você está no modo demonstração. Os dados exibidos são apenas para teste.
+              </AlertDescription>
+            </Alert>
+          )}
+
           {/* Summary Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
             {summaryData.map((item, index) => {

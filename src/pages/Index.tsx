@@ -3,6 +3,7 @@ import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
+import { enterDemoMode } from '@/lib/mockData';
 
 const Index = () => {
   const navigate = useNavigate();
@@ -14,6 +15,11 @@ const Index = () => {
       navigate('/dashboard');
     }
   }, [user, loading, navigate]);
+
+  const handleDemoMode = () => {
+    enterDemoMode();
+    navigate('/dashboard');
+  };
 
   if (loading) {
     return (
@@ -53,6 +59,14 @@ const Index = () => {
               size="lg"
             >
               Criar Conta
+            </Button>
+            <Button 
+              onClick={handleDemoMode}
+              variant="info"
+              size="lg"
+              className="shadow-lg hover:shadow-xl transition-all duration-300"
+            >
+              Entrar em Modo Demonstração
             </Button>
           </div>
         </div>

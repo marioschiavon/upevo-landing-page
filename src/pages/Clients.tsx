@@ -11,6 +11,8 @@ import { NewClientModal } from "@/components/forms/NewClientModal";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useOrganization } from "@/contexts/OrganizationContext";
+import { isDemoMode, getMockData } from "@/lib/mockData";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface Client {
   id: string;
@@ -32,10 +34,20 @@ const Clients = () => {
   const { currentOrganization } = useOrganization();
 
   useEffect(() => {
-    if (currentOrganization) {
+    if (isDemoMode()) {
+      loadDemoClients();
+    } else if (currentOrganization) {
       fetchClients();
     }
   }, [currentOrganization]);
+
+  const loadDemoClients = () => {
+    const mockData = getMockData();
+    if (mockData) {
+      setClients(mockData.clients);
+    }
+    setIsLoading(false);
+  };
 
   const fetchClients = async () => {
     if (!currentOrganization) return;
@@ -105,13 +117,24 @@ const Clients = () => {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold text-foreground">Clientes</h1>
-              <p className="text-muted-foreground">Gerencie todos os clientes de {currentOrganization.name}.</p>
+              <p className="text-muted-foreground">
+                Gerencie todos os clientes de {isDemoMode() ? 'Upevolution Demo' : currentOrganization?.name}.
+              </p>
             </div>
-            <OrganizationDropdown />
+            {!isDemoMode() && <OrganizationDropdown />}
           </div>
         </header>
 
         <div className="p-8">
+          {/* Demo Mode Alert */}
+          {isDemoMode() && (
+            <Alert className="mb-6 border-info/50 bg-info/10">
+              <AlertDescription className="text-info">
+                Você está no modo demonstração. Os dados exibidos são apenas para teste.
+              </AlertDescription>
+            </Alert>
+          )}
+
           <div className="mb-8">
             <Button className="mb-6" onClick={() => setIsNewClientModalOpen(true)}>
               <Plus className="h-4 w-4 mr-2" />

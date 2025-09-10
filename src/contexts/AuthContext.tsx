@@ -3,7 +3,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { useNavigate } from 'react-router-dom';
+import { isDemoMode, mockUser, exitDemoMode } from '@/lib/mockData';
 
 interface AuthContextType {
   user: User | null;
@@ -20,9 +20,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [demoMode, setDemoMode] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
+    // Check for demo mode first
+    if (isDemoMode()) {
+      setDemoMode(true);
+      setUser(mockUser as any);
+      setSession({ user: mockUser } as any);
+      setLoading(false);
+      return;
+    }
+
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
@@ -131,6 +141,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signOut = async () => {
     try {
+      // Check if in demo mode
+      if (isDemoMode()) {
+        exitDemoMode();
+        setDemoMode(false);
+        setUser(null);
+        setSession(null);
+        window.location.href = '/';
+        return;
+      }
+
       // Mostrar toast de loading
       toast({
         title: "Fazendo logout...",

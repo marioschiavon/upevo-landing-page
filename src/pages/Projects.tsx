@@ -50,6 +50,8 @@ import { DeleteConfirmationDialog } from "@/components/ui/delete-confirmation-di
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useOrganization } from "@/contexts/OrganizationContext";
+import { isDemoMode, getMockData } from "@/lib/mockData";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface Project {
   id: string;
@@ -78,13 +80,27 @@ const Projects = () => {
 
   useEffect(() => {
     console.log('Current organization changed:', currentOrganization);
-    if (currentOrganization) {
+    if (isDemoMode()) {
+      loadDemoProjects();
+    } else if (currentOrganization) {
       fetchProjects();
     } else {
       setProjects([]);
       setLoading(false);
     }
   }, [currentOrganization]);
+
+  const loadDemoProjects = () => {
+    const mockData = getMockData();
+    if (mockData) {
+      const formattedProjects = mockData.projects.map(project => ({
+        ...project,
+        client_name: project.clients?.name || null
+      }));
+      setProjects(formattedProjects);
+    }
+    setLoading(false);
+  };
 
   const fetchProjects = async () => {
     if (!currentOrganization) {
@@ -343,14 +359,23 @@ const Projects = () => {
             <div>
               <h1 className="text-2xl font-bold text-foreground">Projetos</h1>
               <p className="text-muted-foreground">
-                Projetos da organização: {currentOrganization.name}
+                Projetos da organização: {isDemoMode() ? 'Upevolution Demo' : currentOrganization?.name}
               </p>
             </div>
-            <OrganizationDropdown />
+            {!isDemoMode() && <OrganizationDropdown />}
           </div>
         </header>
 
         <div className="p-8">
+          {/* Demo Mode Alert */}
+          {isDemoMode() && (
+            <Alert className="mb-6 border-info/50 bg-info/10">
+              <AlertDescription className="text-info">
+                Você está no modo demonstração. Os dados exibidos são apenas para teste.
+              </AlertDescription>
+            </Alert>
+          )}
+
           <div className="mb-8">
             <Button 
               className="mb-6" 

@@ -17,6 +17,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useOrganization } from "@/contexts/OrganizationContext";
 import { Loader2 } from "lucide-react";
+import { isDemoMode, getMockData } from "@/lib/mockData";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export interface FinancialFilters {
   clientId?: string;
@@ -40,10 +42,23 @@ const Financial = () => {
   const [isNewBudgetModalOpen, setIsNewBudgetModalOpen] = useState(false);
 
   useEffect(() => {
-    if (currentOrganization) {
+    if (isDemoMode()) {
+      loadDemoData();
+    } else if (currentOrganization) {
       fetchData();
     }
   }, [filters, currentOrganization]);
+
+  const loadDemoData = () => {
+    const mockData = getMockData();
+    if (mockData) {
+      setBudgets(mockData.budgets);
+      setPayments(mockData.payments);
+      setClients(mockData.clients);
+      setProjects(mockData.projects);
+    }
+    setLoading(false);
+  };
 
   const fetchData = async () => {
     if (!currentOrganization) return;
@@ -182,11 +197,20 @@ const Financial = () => {
               <h1 className="text-2xl font-bold text-foreground">Financeiro Geral</h1>
               <p className="text-muted-foreground">Gerencie orçamentos e pagamentos</p>
             </div>
-            <OrganizationDropdown />
+            {!isDemoMode() && <OrganizationDropdown />}
           </div>
         </header>
 
         <div className="p-6 space-y-6">
+          {/* Demo Mode Alert */}
+          {isDemoMode() && (
+            <Alert className="mb-6 border-info/50 bg-info/10">
+              <AlertDescription className="text-info">
+                Você está no modo demonstração. Os dados exibidos são apenas para teste.
+              </AlertDescription>
+            </Alert>
+          )}
+
           {/* Actions */}
           <div className="flex gap-4 mb-6">
             <Button onClick={() => setIsNewClientModalOpen(true)}>

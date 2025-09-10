@@ -1,7 +1,7 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './AuthContext';
+import { isDemoMode, getMockData } from '@/lib/mockData';
 
 interface Organization {
   id: string;
@@ -29,6 +29,16 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const { user } = useAuth();
 
   const fetchOrganizations = async () => {
+    if (isDemoMode()) {
+      const mockData = getMockData();
+      if (mockData) {
+        setOrganizations(mockData.organizations);
+        setCurrentOrganization(mockData.organizations[0]);
+        setLoading(false);
+      }
+      return;
+    }
+
     if (!user) {
       setOrganizations([]);
       setCurrentOrganization(null);
