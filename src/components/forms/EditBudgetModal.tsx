@@ -65,14 +65,14 @@ export function EditBudgetModal({ isOpen, onClose, budget, onSuccess }: EditBudg
     if (budget && isOpen) {
       form.reset({
         description: budget.description || "",
-        total_value: budget.total_value?.toString() || "",
+        total_value: budget.total_value ? formatCurrencyDisplay(budget.total_value) : "",
         status: budget.status || "aguardando",
-        payment_method: budget.payment_method || "",
-        down_payment: budget.down_payment?.toString() || "",
+        payment_method: budget.payment_method || "a_vista_inicio", // Default to a valid method
+        down_payment: budget.down_payment ? formatCurrencyDisplay(budget.down_payment) : "",
         delivery_days: budget.delivery_days?.toString() || "",
-        hourly_rate: budget.hourly_rate?.toString() || "",
-        estimated_hours: budget.estimated_hours?.toString() || "",
-        monthly_duration: budget.monthly_duration?.toString() || "",
+        hourly_rate: budget.hourly_rate ? formatCurrencyDisplay(budget.hourly_rate) : "",
+        estimated_hours: budget.estimated_hours ? budget.estimated_hours.toString() : "",
+        monthly_duration: budget.monthly_duration ? budget.monthly_duration.toString() : "",
         observations: budget.observations || "",
         start_date: budget.start_date ? new Date(budget.start_date) : undefined,
         valid_until: budget.valid_until ? new Date(budget.valid_until) : undefined,
@@ -80,13 +80,12 @@ export function EditBudgetModal({ isOpen, onClose, budget, onSuccess }: EditBudg
     }
   }, [budget, isOpen, form]);
 
-  const formatCurrencyInput = (value: string) => {
-    const numbers = value.replace(/\D/g, '');
-    const amount = parseFloat(numbers) / 100;
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    }).format(amount);
+  const parseCurrency = (value: string): number => {
+    if (!value) return 0;
+    // Remove thousand separators (dots) and replace decimal comma with dot
+    const cleanedValue = value.replace(/\./g, '').replace(',', '.');
+    const parsed = parseFloat(cleanedValue);
+    return isNaN(parsed) ? 0 : parsed;
   };
 
   const parseCurrency = (value: string): number => {
@@ -94,9 +93,29 @@ export function EditBudgetModal({ isOpen, onClose, budget, onSuccess }: EditBudg
     return parseFloat(numbers) / 100;
   };
 
-  const handleCurrencyChange = (field: any) => (e: React.ChangeEvent<HTMLInputElement>) => {
-    const formatted = formatCurrencyInput(e.target.value);
-    field.onChange(formatted);
+  const formatCurrencyDisplay = (value: number): string => {
+    return new Intl.NumberFormat("pt-BR", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(value);
+  };
+
+  const handleCurrencyInputChange = (field: any) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    let inputValue = e.target.value;
+
+    // Remove all characters that are not digits, commas, or dots
+    inputValue = inputValue.replace(/[^0-9,.]/g, '');
+
+    // Handle multiple decimal separators (keep only the last one as comma)
+    const parts = inputValue.split(',');
+    if (parts.length > 2) {
+      inputValue = parts[0] + ',' + parts.slice(1).join('');
+    }
+    // If there's a dot, convert it to a comma for pt-BR consistency
+    inputValue = inputValue.replace('.', ',');
+
+    // Update the form field with the cleaned string
+    field.onChange(inputValue);
   };
 
   const onSubmit = async (data: EditBudgetFormData) => {
@@ -145,9 +164,11 @@ export function EditBudgetModal({ isOpen, onClose, budget, onSuccess }: EditBudg
   };
 
   const paymentMethods = [
-    { value: 'avista', label: 'À Vista' },
-    { value: 'parcelado', label: 'Parcelado (2x)' },
-    { value: 'mensal', label: 'Mensal' },
+    { value: "a_vista_inicio", label: "À vista no início" },
+    { value: "a_vista_final", label: "À vista no final" },
+    { value: "parcelado", label: "Parcelado" },
+    { value: "mensal", label: "Mensal" },
+    { value: "por_hora", label: "Por hora" },
   ];
 
   return (
@@ -188,8 +209,8 @@ export function EditBudgetModal({ isOpen, onClose, budget, onSuccess }: EditBudg
                       <FormControl>
                         <Input
                           placeholder="R$ 0,00"
-                          value={field.value}
-                          onChange={handleCurrencyChange(field)}
+                          value={field.value ? formatCurrencyDisplay(parseCurrency(field.value)) : ''}
+                          onChange={handleCurrencyInputChange(field)}
                         />
                       </FormControl>
                       <FormMessage />
@@ -384,8 +405,8 @@ export function EditBudgetModal({ isOpen, onClose, budget, onSuccess }: EditBudg
                     <FormControl>
                       <Input
                         placeholder="R$ 0,00"
-                        value={field.value}
-                        onChange={handleCurrencyChange(field)}
+                          value={field.value ? formatCurrencyDisplay(parseCurrency(field.value)) : ''}
+                          onChange={handleCurrencyInputChange(field)}
                       />
                     </FormControl>
                     <FormMessage />

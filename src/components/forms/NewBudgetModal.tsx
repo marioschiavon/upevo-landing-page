@@ -79,10 +79,11 @@ const budgetSchema = z.object({
 });
 
 const parseCurrency = (value: string) => {
-  // Remove formatação e converte para número
-  const numbers = value.replace(/\D/g, "");
-  if (!numbers) return 0;
-  return parseInt(numbers) / 100;
+  if (!value) return 0;
+  // Remove thousand separators (dots) and replace decimal comma with dot
+  const cleanedValue = value.replace(/\./g, '').replace(',', '.');
+  const parsed = parseFloat(cleanedValue);
+  return isNaN(parsed) ? 0 : parsed;
 };
 
 type BudgetFormData = z.infer<typeof budgetSchema>;
@@ -92,6 +93,13 @@ interface NewBudgetModalProps {
   onClose: () => void;
   onSuccess: () => void;
 }
+
+const formatCurrencyDisplay = (value: number): string => {
+  return new Intl.NumberFormat("pt-BR", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(value);
+};
 
 export const NewBudgetModal = ({ isOpen, onClose, onSuccess }: NewBudgetModalProps) => {
   const { toast } = useToast();
@@ -191,28 +199,20 @@ export const NewBudgetModal = ({ isOpen, onClose, onSuccess }: NewBudgetModalPro
     }
   };
 
-  const formatCurrencyInput = (value: string) => {
-    // Remove tudo exceto números
-    const numbers = value.replace(/\D/g, "");
-    
-    if (!numbers) return "";
-    
-    // Converte para centavos
-    const cents = parseInt(numbers);
-    const reais = cents / 100;
-    
-    // Formata com separadores de milhares e decimais
-    return new Intl.NumberFormat("pt-BR", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(reais);
-  };
+  const handleCurrencyInputChange = (field: any) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    let inputValue = e.target.value;
 
-  const parseCurrency = (value: string) => {
-    // Remove formatação e converte para número
-    const numbers = value.replace(/\D/g, "");
-    if (!numbers) return 0;
-    return parseInt(numbers) / 100;
+    // Remove all characters that are not digits, commas, or dots
+    inputValue = inputValue.replace(/[^0-9,.]/g, '');
+
+    // Handle multiple decimal separators (keep only the last one as comma)
+    const parts = inputValue.split(',');
+    if (parts.length > 2) {
+      inputValue = parts[0] + ',' + parts.slice(1).join('');
+    }
+    // If there's a dot, convert it to a comma for pt-BR consistency
+    inputValue = inputValue.replace('.', ',');
+    field.onChange(inputValue);
   };
 
   const handleCurrencyChange = (field: any, value: string) => {
@@ -437,8 +437,8 @@ export const NewBudgetModal = ({ isOpen, onClose, onSuccess }: NewBudgetModalPro
                     <FormControl>
                       <Input
                         placeholder="0,00"
-                        value={field.value}
-                        onChange={(e) => handleCurrencyChange(field, e.target.value)}
+                        value={field.value ? formatCurrencyDisplay(parseCurrency(field.value)) : ''}
+                        onChange={handleCurrencyInputChange(field)}
                       />
                     </FormControl>
                     <FormMessage />
@@ -585,8 +585,8 @@ export const NewBudgetModal = ({ isOpen, onClose, onSuccess }: NewBudgetModalPro
                         <FormControl>
                           <Input
                             placeholder="0,00"
-                            value={field.value || ""}
-                            onChange={(e) => handleCurrencyChange(field, e.target.value)}
+                            value={field.value ? formatCurrencyDisplay(parseCurrency(field.value)) : ''}
+                            onChange={handleCurrencyInputChange(field)}
                           />
                         </FormControl>
                         <FormMessage />
@@ -694,8 +694,8 @@ export const NewBudgetModal = ({ isOpen, onClose, onSuccess }: NewBudgetModalPro
                       <FormControl>
                         <Input
                           placeholder="0,00"
-                          value={field.value || ""}
-                          onChange={(e) => handleCurrencyChange(field, e.target.value)}
+                          value={field.value ? formatCurrencyDisplay(parseCurrency(field.value)) : ''}
+                          onChange={handleCurrencyInputChange(field)}
                         />
                       </FormControl>
                       <FormMessage />
